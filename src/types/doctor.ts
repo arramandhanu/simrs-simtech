@@ -1,0 +1,36 @@
+export interface Doctor {
+  id: number;
+  kode: string;
+  nama: string;
+  gelar?: string;
+  jenis_kelamin: 'Laki-laki' | 'Perempuan';
+  tempat_lahir?: string;
+  tanggal_lahir?: string;
+  nik?: string;
+  email?: string;
+  no_telp?: string;
+  alamat?: string;
+  practitioner_id: string;
+  no_str?: string;
+  tgl_berlaku_str?: string;
+  tgl_kadaluarsa_str?: string;
+  no_sip?: string;
+  tgl_berlaku_sip?: string;
+  tgl_kadaluarsa_sip?: string;
+  spesialisasi?: string;
+  pendidikan?: string;
+  status_pegawai?: 'Tetap' | 'Kontrak' | 'Magang';
+  poli?: string;
+  jabatan?: string;
+  shift?: string;
+  nip?: string;
+  tgl_mulai_kerja?: string;
+  jabatan_struktural?: string;
+  status_aktif?: 'Aktif' | 'Tidak Aktif';
+  unit_kerja?: string;
+  golongan?: string;
+  gaji_pokok?: number;
+  tunjangan?: number;
+  created_at?: string;
+  updated_at?: string;
+}
