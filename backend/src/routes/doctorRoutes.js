@@ -5,5 +5,6 @@ const doctorController = require('../controllers/doctorController');
 router.get('/', doctorController.getAllDoctors);
 router.get('/:id', doctorController.getDoctorById);
 router.post('/', doctorController.createDoctor);
+router.put('/:id', doctorController.updateDoctor);
 
 module.exports = router;

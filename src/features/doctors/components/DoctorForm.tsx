@@ -105,7 +105,7 @@ export const DoctorForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
+    // Validate required fields
     const result = doctorSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -113,9 +113,12 @@ export const DoctorForm = ({
         fieldErrors[issue.path[0] as string] = issue.message;
       });
       setErrors(fieldErrors);
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
+    setErrors({}); // Clear errors before submit
     await onSubmit(formData);
   };
 
@@ -136,6 +139,20 @@ export const DoctorForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error Summary */}
+      {Object.keys(errors).length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-red-800">
+            Please fix the following errors:
+          </p>
+          <ul className="mt-2 text-sm text-red-600 list-disc list-inside">
+            {Object.entries(errors).map(([field, message]) => (
+              <li key={field}>{message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Required Information */}
       <FormSection title="Basic Information *">
         <Input
@@ -186,18 +203,21 @@ export const DoctorForm = ({
           value={formData.gelar}
           onChange={handleChange}
           placeholder="dr., Sp.PD, etc."
+          required
         />
         <Input
           label="NIK"
           name="nik"
           value={formData.nik}
           onChange={handleChange}
+          required
         />
         <Input
           label="Tempat Lahir"
           name="tempat_lahir"
           value={formData.tempat_lahir}
           onChange={handleChange}
+          required
         />
         <Input
           label="Tanggal Lahir"
@@ -205,6 +225,7 @@ export const DoctorForm = ({
           type="date"
           value={formData.tanggal_lahir}
           onChange={handleChange}
+          required
         />
         <Input
           label="Email"
@@ -212,12 +233,14 @@ export const DoctorForm = ({
           type="email"
           value={formData.email}
           onChange={handleChange}
+          required
         />
         <Input
           label="No. Telepon"
           name="no_telp"
           value={formData.no_telp}
           onChange={handleChange}
+          required
         />
       </FormSection>
 
@@ -228,12 +251,14 @@ export const DoctorForm = ({
           name="no_str"
           value={formData.no_str}
           onChange={handleChange}
+          required
         />
         <Input
           label="No. SIP"
           name="no_sip"
           value={formData.no_sip}
           onChange={handleChange}
+          required
         />
         <Input
           label="Spesialisasi"
@@ -241,12 +266,14 @@ export const DoctorForm = ({
           value={formData.spesialisasi}
           onChange={handleChange}
           placeholder="Umum, Bedah, Anak, etc."
+          required
         />
         <Input
           label="Pendidikan"
           name="pendidikan"
           value={formData.pendidikan}
           onChange={handleChange}
+          required
         />
       </FormSection>
 
@@ -286,18 +313,21 @@ export const DoctorForm = ({
           name="poli"
           value={formData.poli}
           onChange={handleChange}
+          required
         />
         <Input
           label="Jabatan"
           name="jabatan"
           value={formData.jabatan}
           onChange={handleChange}
+          required
         />
         <Input
           label="Unit Kerja"
           name="unit_kerja"
           value={formData.unit_kerja}
           onChange={handleChange}
+          required
         />
       </FormSection>
 

@@ -15,12 +15,19 @@ import { Button } from "../../../components/common/Button";
 interface DoctorTableProps {
   doctors: Doctor[];
   isLoading?: boolean;
+  onView?: (doctor: Doctor) => void;
+  onEdit?: (doctor: Doctor) => void;
 }
 
 type SortKey = "kode" | "nama" | "no_sip" | "spesialisasi" | "status_aktif";
 type SortDirection = "asc" | "desc" | null;
 
-export const DoctorTable = ({ doctors, isLoading }: DoctorTableProps) => {
+export const DoctorTable = ({
+  doctors,
+  isLoading,
+  onView,
+  onEdit,
+}: DoctorTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -162,11 +169,13 @@ export const DoctorTable = ({ doctors, isLoading }: DoctorTableProps) => {
                       variant="ghost"
                       size="sm"
                       icon={<Eye size={16} />}
+                      onClick={() => onView?.(doctor)}
                     />
                     <Button
                       variant="ghost"
                       size="sm"
                       icon={<Edit size={16} />}
+                      onClick={() => onEdit?.(doctor)}
                     />
                     <Button
                       variant="ghost"
