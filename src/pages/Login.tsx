@@ -163,7 +163,7 @@ const LoginPage = () => {
             </p>
           </div>
 
-          <div className="relative z-10">
+          {/* <div className="relative z-10">
             <div className="flex items-center gap-4 text-sm font-medium text-medical-200">
               <div className="flex -space-x-3">
                 {[1, 2, 3].map((i) => (
@@ -177,7 +177,7 @@ const LoginPage = () => {
               </div>
               <span>Trusted by 50+ Top Hospitals</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
