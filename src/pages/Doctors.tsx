@@ -3,7 +3,12 @@ import { Plus, Search } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { Card } from "../components/common/Card";
+import { Modal } from "../components/common/Modal";
 import { DoctorTable } from "../features/doctors/components/DoctorTable";
+import {
+  DoctorForm,
+  type DoctorFormData,
+} from "../features/doctors/components/DoctorForm";
 import { doctorService } from "../services/doctorService";
 import type { Doctor } from "../types/doctor";
 
@@ -11,6 +16,8 @@ const Doctors = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchDoctors();
@@ -27,6 +34,24 @@ const Doctors = () => {
       console.error("Failed to fetch doctors", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateDoctor = async (data: DoctorFormData) => {
+    setIsSubmitting(true);
+    try {
+      const response = await doctorService.createDoctor(data);
+      if (response.success) {
+        setIsModalOpen(false);
+        fetchDoctors(); // Refresh the list
+      } else {
+        alert(response.message || "Failed to create doctor");
+      }
+    } catch (error) {
+      console.error("Failed to create doctor", error);
+      alert("An error occurred while creating the doctor");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -47,7 +72,9 @@ const Doctors = () => {
             Manage doctor data, schedules, and assignments
           </p>
         </div>
-        <Button icon={<Plus size={20} />}>Add New Doctor</Button>
+        <Button icon={<Plus size={20} />} onClick={() => setIsModalOpen(true)}>
+          Add New Doctor
+        </Button>
       </div>
 
       <Card>
@@ -63,6 +90,20 @@ const Doctors = () => {
         </div>
         <DoctorTable doctors={filteredDoctors} isLoading={loading} />
       </Card>
+
+      {/* Add Doctor Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add New Doctor"
+        size="xl"
+      >
+        <DoctorForm
+          onSubmit={handleCreateDoctor}
+          onCancel={() => setIsModalOpen(false)}
+          isLoading={isSubmitting}
+        />
+      </Modal>
     </div>
   );
 };

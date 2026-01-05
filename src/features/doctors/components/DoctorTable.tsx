@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { Edit, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Edit,
+  Trash2,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+} from "lucide-react";
 import type { Doctor } from "../../../types/doctor";
 import { Button } from "../../../components/common/Button";
 
@@ -8,9 +17,54 @@ interface DoctorTableProps {
   isLoading?: boolean;
 }
 
+type SortKey = "kode" | "nama" | "no_sip" | "spesialisasi" | "status_aktif";
+type SortDirection = "asc" | "desc" | null;
+
 export const DoctorTable = ({ doctors, isLoading }: DoctorTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const itemsPerPage = 5;
+
+  // Sorting Logic
+  const sortedDoctors = useMemo(() => {
+    if (!sortKey || !sortDirection) return doctors;
+
+    return [...doctors].sort((a, b) => {
+      const aValue = a[sortKey] ?? "";
+      const bValue = b[sortKey] ?? "";
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [doctors, sortKey, sortDirection]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      // Cycle: asc -> desc -> null
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortDirection(null);
+        setSortKey(null);
+      }
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortKey !== key)
+      return <ChevronsUpDown size={14} className="text-slate-400" />;
+    if (sortDirection === "asc")
+      return <ChevronUp size={14} className="text-medical-600" />;
+    if (sortDirection === "desc")
+      return <ChevronDown size={14} className="text-medical-600" />;
+    return <ChevronsUpDown size={14} className="text-slate-400" />;
+  };
 
   if (isLoading) {
     return (
@@ -25,13 +79,34 @@ export const DoctorTable = ({ doctors, isLoading }: DoctorTableProps) => {
   }
 
   // Pagination Logic
-  const totalPages = Math.ceil(doctors.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedDoctors.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedDoctors = doctors.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedDoctors = sortedDoctors.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
+
+  const SortableHeader = ({
+    label,
+    sortKeyName,
+  }: {
+    label: string;
+    sortKeyName: SortKey;
+  }) => (
+    <th
+      className="py-4 px-4 text-sm font-semibold text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors select-none"
+      onClick={() => handleSort(sortKeyName)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {getSortIcon(sortKeyName)}
+      </div>
+    </th>
+  );
 
   return (
     <div>
@@ -39,21 +114,11 @@ export const DoctorTable = ({ doctors, isLoading }: DoctorTableProps) => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="py-4 px-4 text-sm font-semibold text-slate-600">
-                Kode
-              </th>
-              <th className="py-4 px-4 text-sm font-semibold text-slate-600">
-                Nama
-              </th>
-              <th className="py-4 px-4 text-sm font-semibold text-slate-600">
-                SIP
-              </th>
-              <th className="py-4 px-4 text-sm font-semibold text-slate-600">
-                Spesialisasi
-              </th>
-              <th className="py-4 px-4 text-sm font-semibold text-slate-600">
-                Status
-              </th>
+              <SortableHeader label="Kode" sortKeyName="kode" />
+              <SortableHeader label="Nama" sortKeyName="nama" />
+              <SortableHeader label="SIP" sortKeyName="no_sip" />
+              <SortableHeader label="Spesialisasi" sortKeyName="spesialisasi" />
+              <SortableHeader label="Status" sortKeyName="status_aktif" />
               <th className="py-4 px-4 text-sm font-semibold text-slate-600 text-right">
                 Actions
               </th>
@@ -122,8 +187,8 @@ export const DoctorTable = ({ doctors, isLoading }: DoctorTableProps) => {
         <div className="flex items-center justify-between px-4 py-4 border-t border-slate-200">
           <div className="text-sm text-slate-500">
             Showing {startIndex + 1} to{" "}
-            {Math.min(startIndex + itemsPerPage, doctors.length)} of{" "}
-            {doctors.length} results
+            {Math.min(startIndex + itemsPerPage, sortedDoctors.length)} of{" "}
+            {sortedDoctors.length} results
           </div>
           <div className="flex gap-2">
             <Button
