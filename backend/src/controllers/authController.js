@@ -13,7 +13,7 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const { rows } = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     
     if (rows.length === 0) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -70,10 +70,11 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    const [result] = await db.execute('INSERT INTO users (email, password) VALUES (?, ?)', [email, hashedPassword]);
+    await db.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
     
     res.status(201).json({ success: true, message: 'User created' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

@@ -3,16 +3,16 @@ const db = require('../config/database');
 exports.getStats = async (req, res) => {
   try {
     // Get patient count
-    const [patientRows] = await db.execute('SELECT COUNT(*) as count FROM patients');
-    const totalPatients = patientRows[0].count;
+    const patientResult = await db.query('SELECT COUNT(*) as count FROM patients');
+    const totalPatients = parseInt(patientResult.rows[0].count);
 
     // Get today's registrations (if you track dates)
     const today = new Date().toISOString().split('T')[0];
-    const [todayRows] = await db.execute(
-      'SELECT COUNT(*) as count FROM patients WHERE DATE(created_at) = ?',
+    const todayResult = await db.query(
+      'SELECT COUNT(*) as count FROM patients WHERE DATE(created_at) = $1',
       [today]
     );
-    const todayPatients = todayRows[0].count;
+    const todayPatients = parseInt(todayResult.rows[0].count);
 
     const stats = [
       { 
@@ -59,3 +59,4 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+

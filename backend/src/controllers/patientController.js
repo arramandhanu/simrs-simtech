@@ -2,7 +2,7 @@ const db = require('../config/database');
 
 exports.getRecentPatients = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM patients ORDER BY created_at DESC LIMIT 10');
+    const { rows } = await db.query('SELECT * FROM patients ORDER BY created_at DESC LIMIT 10');
     
     // Map DB columns to Frontend expected format
     const patients = rows.map(p => ({
@@ -22,7 +22,7 @@ exports.getRecentPatients = async (req, res) => {
 
 exports.getPatientById = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM patients WHERE id = ?', [req.params.id]);
+    const { rows } = await db.query('SELECT * FROM patients WHERE id = $1', [req.params.id]);
     
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Patient not found' });
@@ -48,3 +48,4 @@ exports.getPatientById = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+

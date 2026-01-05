@@ -2,7 +2,7 @@ const db = require('../config/database');
 
 exports.getAllDoctors = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM dokter ORDER BY created_at DESC');
+    const { rows } = await db.query('SELECT * FROM dokter ORDER BY created_at DESC');
     res.json({ success: true, data: rows });
   } catch (error) {
     console.error('Error fetching doctors:', error);
@@ -12,7 +12,7 @@ exports.getAllDoctors = async (req, res) => {
 
 exports.getDoctorById = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM dokter WHERE id = ?', [req.params.id]);
+    const { rows } = await db.query('SELECT * FROM dokter WHERE id = $1', [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
@@ -24,18 +24,59 @@ exports.getDoctorById = async (req, res) => {
 };
 
 exports.createDoctor = async (req, res) => {
-  // TODO: Add full field list based on schema
-  const { kode, nama, sip } = req.body; 
-  // For now, simple implementation to verify connectivity
+  const {
+    kode, nama, gelar, jenis_kelamin, tempat_lahir, tanggal_lahir,
+    nik, email, no_telp, alamat, practitioner_id,
+    no_str, tgl_berlaku_str, tgl_kadaluarsa_str,
+    no_sip, tgl_berlaku_sip, tgl_kadaluarsa_sip,
+    spesialisasi, pendidikan, status_pegawai, poli, jabatan, shift,
+    nip, tgl_mulai_kerja, jabatan_struktural, status_aktif,
+    unit_kerja, golongan, gaji_pokok, tunjangan
+  } = req.body;
+
+  // Basic validation
+  if (!kode || !nama || !jenis_kelamin || !practitioner_id) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Required fields: kode, nama, jenis_kelamin, practitioner_id' 
+    });
+  }
+
   try {
-     // This is a placeholder insert. Real implementation needs all fields.
-     // Since the user provided a large schema, usually we'd dynamically build the query or map all fields.
-     // For this step, I'll focus on getting the READ part working perfectly first as requested "management" usually implies listing first.
-     // But to "manage", create is important.
-     // Let's implement a robust insert later/next step when we have the form.
-     res.status(501).json({ success: false, message: 'Create not implemented yet' });
+    const query = `
+      INSERT INTO dokter (
+        kode, nama, gelar, jenis_kelamin, tempat_lahir, tanggal_lahir,
+        nik, email, no_telp, alamat, practitioner_id,
+        no_str, tgl_berlaku_str, tgl_kadaluarsa_str,
+        no_sip, tgl_berlaku_sip, tgl_kadaluarsa_sip,
+        spesialisasi, pendidikan, status_pegawai, poli, jabatan, shift,
+        nip, tgl_mulai_kerja, jabatan_struktural, status_aktif,
+        unit_kerja, golongan, gaji_pokok, tunjangan
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+        $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
+      ) RETURNING *
+    `;
+
+    const values = [
+      kode, nama, gelar || null, jenis_kelamin, tempat_lahir || null, tanggal_lahir || null,
+      nik || null, email || null, no_telp || null, alamat || null, practitioner_id,
+      no_str || null, tgl_berlaku_str || null, tgl_kadaluarsa_str || null,
+      no_sip || null, tgl_berlaku_sip || null, tgl_kadaluarsa_sip || null,
+      spesialisasi || null, pendidikan || null, status_pegawai || null, poli || null, jabatan || null, shift || null,
+      nip || null, tgl_mulai_kerja || null, jabatan_struktural || null, status_aktif || 'Aktif',
+      unit_kerja || null, golongan || null, gaji_pokok || null, tunjangan || null
+    ];
+
+    const { rows } = await db.query(query, values);
+    res.status(201).json({ success: true, data: rows[0], message: 'Doctor created successfully' });
   } catch (error) {
     console.error('Error creating doctor:', error);
+    if (error.code === '23505') { // Unique constraint violation
+      return res.status(400).json({ success: false, message: 'Doctor with this code already exists' });
+    }
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+
