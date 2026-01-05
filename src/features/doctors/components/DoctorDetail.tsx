@@ -1,15 +1,5 @@
 import type { Doctor } from "../../../types/doctor";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  FileText,
-  Briefcase,
-  Building,
-  Award,
-} from "lucide-react";
+import { User, Mail, Phone, Calendar, FileText, MapPin } from "lucide-react";
 
 interface DoctorDetailProps {
   doctor: Doctor;
@@ -62,7 +52,17 @@ const formatDate = (dateString: string | null | undefined): string => {
   }
 };
 
+const formatGender = (gender?: string) => {
+  if (gender === "L") return "Laki-laki";
+  if (gender === "P") return "Perempuan";
+  return "-";
+};
+
 export const DoctorDetail = ({ doctor }: DoctorDetailProps) => {
+  const fullName = `${doctor.gelar_depan || ""} ${doctor.nama}${
+    doctor.gelar_belakang ? `, ${doctor.gelar_belakang}` : ""
+  }`.trim();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -71,18 +71,16 @@ export const DoctorDetail = ({ doctor }: DoctorDetailProps) => {
           <User size={32} className="text-medical-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-800">
-            {doctor.gelar} {doctor.nama}
-          </h2>
-          <p className="text-slate-500">{doctor.spesialisasi || "General"}</p>
+          <h2 className="text-xl font-bold text-slate-800">{fullName}</h2>
+          <p className="text-slate-500">{doctor.kode_dokter}</p>
           <span
             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${
-              doctor.status_aktif === "Aktif"
+              doctor.status === "AKTIF"
                 ? "bg-green-100 text-green-700"
                 : "bg-slate-100 text-slate-600"
             }`}
           >
-            {doctor.status_aktif || "Unknown"}
+            {doctor.status || "Unknown"}
           </span>
         </div>
       </div>
@@ -92,41 +90,23 @@ export const DoctorDetail = ({ doctor }: DoctorDetailProps) => {
         <InfoItem
           icon={<FileText size={16} />}
           label="Kode Dokter"
-          value={doctor.kode}
+          value={doctor.kode_dokter}
+        />
+        <InfoItem icon={<User size={16} />} label="Nama" value={doctor.nama} />
+        <InfoItem
+          icon={<FileText size={16} />}
+          label="Gelar Depan"
+          value={doctor.gelar_depan}
         />
         <InfoItem
           icon={<FileText size={16} />}
-          label="Practitioner ID"
-          value={doctor.practitioner_id}
+          label="Gelar Belakang"
+          value={doctor.gelar_belakang}
         />
         <InfoItem
           icon={<User size={16} />}
           label="Jenis Kelamin"
-          value={doctor.jenis_kelamin}
-        />
-        <InfoItem
-          icon={<FileText size={16} />}
-          label="NIK"
-          value={doctor.nik}
-        />
-      </Section>
-
-      {/* Contact Information */}
-      <Section title="Contact Information">
-        <InfoItem
-          icon={<Mail size={16} />}
-          label="Email"
-          value={doctor.email}
-        />
-        <InfoItem
-          icon={<Phone size={16} />}
-          label="No. Telepon"
-          value={doctor.no_telp}
-        />
-        <InfoItem
-          icon={<MapPin size={16} />}
-          label="Tempat Lahir"
-          value={doctor.tempat_lahir}
+          value={formatGender(doctor.jenis_kelamin)}
         />
         <InfoItem
           icon={<Calendar size={16} />}
@@ -135,52 +115,25 @@ export const DoctorDetail = ({ doctor }: DoctorDetailProps) => {
         />
       </Section>
 
-      {/* Credentials */}
-      <Section title="Credentials">
+      {/* Contact Information */}
+      <Section title="Contact Information">
         <InfoItem
-          icon={<Award size={16} />}
-          label="No. STR"
-          value={doctor.no_str}
+          icon={<Phone size={16} />}
+          label="No. HP"
+          value={doctor.no_hp}
         />
         <InfoItem
-          icon={<Award size={16} />}
-          label="No. SIP"
-          value={doctor.no_sip}
+          icon={<Mail size={16} />}
+          label="Email"
+          value={doctor.email}
         />
-        <InfoItem
-          icon={<Award size={16} />}
-          label="Spesialisasi"
-          value={doctor.spesialisasi}
-        />
-        <InfoItem
-          icon={<Award size={16} />}
-          label="Pendidikan"
-          value={doctor.pendidikan}
-        />
-      </Section>
-
-      {/* Employment */}
-      <Section title="Employment">
-        <InfoItem
-          icon={<Briefcase size={16} />}
-          label="Status Pegawai"
-          value={doctor.status_pegawai}
-        />
-        <InfoItem
-          icon={<Building size={16} />}
-          label="Poli"
-          value={doctor.poli}
-        />
-        <InfoItem
-          icon={<Briefcase size={16} />}
-          label="Jabatan"
-          value={doctor.jabatan}
-        />
-        <InfoItem
-          icon={<Building size={16} />}
-          label="Unit Kerja"
-          value={doctor.unit_kerja}
-        />
+        <div className="md:col-span-2">
+          <InfoItem
+            icon={<MapPin size={16} />}
+            label="Alamat"
+            value={doctor.alamat}
+          />
+        </div>
       </Section>
     </div>
   );

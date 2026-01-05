@@ -6,49 +6,21 @@ import { Save, Loader2 } from "lucide-react";
 
 // Validation schema for required fields
 const doctorSchema = z.object({
-  kode: z.string().min(1, "Kode is required"),
+  kode_dokter: z.string().min(1, "Kode Dokter is required"),
   nama: z.string().min(1, "Nama is required"),
-  jenis_kelamin: z.enum(["Laki-laki", "Perempuan"]),
-  practitioner_id: z.string().min(1, "Practitioner ID is required"),
 });
 
 export interface DoctorFormData {
-  // Required
-  kode: string;
+  kode_dokter: string;
   nama: string;
-  jenis_kelamin: "Laki-laki" | "Perempuan";
-  practitioner_id: string;
-  // Optional - Personal
-  gelar?: string;
-  tempat_lahir?: string;
+  gelar_depan?: string;
+  gelar_belakang?: string;
+  jenis_kelamin?: "L" | "P";
   tanggal_lahir?: string;
-  nik?: string;
+  no_hp?: string;
   email?: string;
-  no_telp?: string;
   alamat?: string;
-  // Optional - Credentials
-  no_str?: string;
-  tgl_berlaku_str?: string;
-  tgl_kadaluarsa_str?: string;
-  no_sip?: string;
-  tgl_berlaku_sip?: string;
-  tgl_kadaluarsa_sip?: string;
-  // Optional - Professional
-  spesialisasi?: string;
-  pendidikan?: string;
-  poli?: string;
-  // Optional - Employment
-  status_pegawai?: "Tetap" | "Kontrak" | "Magang";
-  jabatan?: string;
-  shift?: string;
-  nip?: string;
-  tgl_mulai_kerja?: string;
-  jabatan_struktural?: string;
-  status_aktif?: "Aktif" | "Tidak Aktif";
-  unit_kerja?: string;
-  golongan?: string;
-  gaji_pokok?: number;
-  tunjangan?: number;
+  status?: string;
 }
 
 interface DoctorFormProps {
@@ -65,26 +37,16 @@ export const DoctorForm = ({
   isLoading = false,
 }: DoctorFormProps) => {
   const [formData, setFormData] = useState<DoctorFormData>({
-    kode: initialData?.kode ?? "",
+    kode_dokter: initialData?.kode_dokter ?? "",
     nama: initialData?.nama ?? "",
-    jenis_kelamin: initialData?.jenis_kelamin ?? "Laki-laki",
-    practitioner_id: initialData?.practitioner_id ?? "",
-    gelar: initialData?.gelar ?? "",
-    tempat_lahir: initialData?.tempat_lahir ?? "",
-    tanggal_lahir: initialData?.tanggal_lahir ?? "",
-    nik: initialData?.nik ?? "",
+    gelar_depan: initialData?.gelar_depan ?? "",
+    gelar_belakang: initialData?.gelar_belakang ?? "",
+    jenis_kelamin: initialData?.jenis_kelamin ?? "L",
+    tanggal_lahir: initialData?.tanggal_lahir?.split("T")[0] ?? "",
+    no_hp: initialData?.no_hp ?? "",
     email: initialData?.email ?? "",
-    no_telp: initialData?.no_telp ?? "",
     alamat: initialData?.alamat ?? "",
-    no_str: initialData?.no_str ?? "",
-    no_sip: initialData?.no_sip ?? "",
-    spesialisasi: initialData?.spesialisasi ?? "",
-    pendidikan: initialData?.pendidikan ?? "",
-    poli: initialData?.poli ?? "",
-    status_pegawai: initialData?.status_pegawai ?? "Tetap",
-    jabatan: initialData?.jabatan ?? "",
-    status_aktif: initialData?.status_aktif ?? "Aktif",
-    unit_kerja: initialData?.unit_kerja ?? "",
+    status: initialData?.status ?? "AKTIF",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -96,7 +58,6 @@ export const DoctorForm = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error on change
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -105,7 +66,6 @@ export const DoctorForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
     const result = doctorSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -113,12 +73,11 @@ export const DoctorForm = ({
         fieldErrors[issue.path[0] as string] = issue.message;
       });
       setErrors(fieldErrors);
-      // Scroll to top to show errors
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    setErrors({}); // Clear errors before submit
+    setErrors({});
     await onSubmit(formData);
   };
 
@@ -153,14 +112,14 @@ export const DoctorForm = ({
         </div>
       )}
 
-      {/* Required Information */}
+      {/* Basic Information */}
       <FormSection title="Basic Information *">
         <Input
           label="Kode Dokter"
-          name="kode"
-          value={formData.kode}
+          name="kode_dokter"
+          value={formData.kode_dokter}
           onChange={handleChange}
-          error={errors.kode}
+          error={errors.kode_dokter}
           required
         />
         <Input
@@ -171,9 +130,23 @@ export const DoctorForm = ({
           error={errors.nama}
           required
         />
+        <Input
+          label="Gelar Depan"
+          name="gelar_depan"
+          value={formData.gelar_depan}
+          onChange={handleChange}
+          placeholder="dr., Prof., etc."
+        />
+        <Input
+          label="Gelar Belakang"
+          name="gelar_belakang"
+          value={formData.gelar_belakang}
+          onChange={handleChange}
+          placeholder="Sp.PD, M.Kes, etc."
+        />
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Jenis Kelamin *
+            Jenis Kelamin
           </label>
           <select
             name="jenis_kelamin"
@@ -181,51 +154,27 @@ export const DoctorForm = ({
             onChange={handleChange}
             className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
           >
-            <option value="Laki-laki">Laki-laki</option>
-            <option value="Perempuan">Perempuan</option>
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
           </select>
         </div>
-        <Input
-          label="Practitioner ID"
-          name="practitioner_id"
-          value={formData.practitioner_id}
-          onChange={handleChange}
-          error={errors.practitioner_id}
-          required
-        />
-      </FormSection>
-
-      {/* Personal Information */}
-      <FormSection title="Personal Information">
-        <Input
-          label="Gelar"
-          name="gelar"
-          value={formData.gelar}
-          onChange={handleChange}
-          placeholder="dr., Sp.PD, etc."
-          required
-        />
-        <Input
-          label="NIK"
-          name="nik"
-          value={formData.nik}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="Tempat Lahir"
-          name="tempat_lahir"
-          value={formData.tempat_lahir}
-          onChange={handleChange}
-          required
-        />
         <Input
           label="Tanggal Lahir"
           name="tanggal_lahir"
           type="date"
           value={formData.tanggal_lahir}
           onChange={handleChange}
-          required
+        />
+      </FormSection>
+
+      {/* Contact Information */}
+      <FormSection title="Contact Information">
+        <Input
+          label="No. HP"
+          name="no_hp"
+          value={formData.no_hp}
+          onChange={handleChange}
+          placeholder="08xxxxxxxxxx"
         />
         <Input
           label="Email"
@@ -233,102 +182,38 @@ export const DoctorForm = ({
           type="email"
           value={formData.email}
           onChange={handleChange}
-          required
         />
-        <Input
-          label="No. Telepon"
-          name="no_telp"
-          value={formData.no_telp}
-          onChange={handleChange}
-          required
-        />
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Alamat
+          </label>
+          <textarea
+            name="alamat"
+            value={formData.alamat}
+            onChange={handleChange}
+            rows={3}
+            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent resize-none"
+            placeholder="Alamat lengkap..."
+          />
+        </div>
       </FormSection>
 
-      {/* Credentials */}
-      <FormSection title="Credentials">
-        <Input
-          label="No. STR"
-          name="no_str"
-          value={formData.no_str}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="No. SIP"
-          name="no_sip"
-          value={formData.no_sip}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="Spesialisasi"
-          name="spesialisasi"
-          value={formData.spesialisasi}
-          onChange={handleChange}
-          placeholder="Umum, Bedah, Anak, etc."
-          required
-        />
-        <Input
-          label="Pendidikan"
-          name="pendidikan"
-          value={formData.pendidikan}
-          onChange={handleChange}
-          required
-        />
-      </FormSection>
-
-      {/* Employment */}
-      <FormSection title="Employment">
+      {/* Status */}
+      <FormSection title="Status">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
-            Status Pegawai
+            Status
           </label>
           <select
-            name="status_pegawai"
-            value={formData.status_pegawai}
+            name="status"
+            value={formData.status}
             onChange={handleChange}
             className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
           >
-            <option value="Tetap">Tetap</option>
-            <option value="Kontrak">Kontrak</option>
-            <option value="Magang">Magang</option>
+            <option value="AKTIF">Aktif</option>
+            <option value="TIDAK AKTIF">Tidak Aktif</option>
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Status Aktif
-          </label>
-          <select
-            name="status_aktif"
-            value={formData.status_aktif}
-            onChange={handleChange}
-            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
-          >
-            <option value="Aktif">Aktif</option>
-            <option value="Tidak Aktif">Tidak Aktif</option>
-          </select>
-        </div>
-        <Input
-          label="Poli"
-          name="poli"
-          value={formData.poli}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="Jabatan"
-          name="jabatan"
-          value={formData.jabatan}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          label="Unit Kerja"
-          name="unit_kerja"
-          value={formData.unit_kerja}
-          onChange={handleChange}
-          required
-        />
       </FormSection>
 
       {/* Actions */}

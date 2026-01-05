@@ -6,11 +6,11 @@ import { Card } from "../components/common/Card";
 import { Modal } from "../components/common/Modal";
 import { Toast, useToast } from "../components/common/Toast";
 import { DoctorTable } from "../features/doctors/components/DoctorTable";
+import { DoctorModal } from "../features/doctors/components/DoctorModal";
 import {
   DoctorForm,
   type DoctorFormData,
 } from "../features/doctors/components/DoctorForm";
-import { DoctorDetail } from "../features/doctors/components/DoctorDetail";
 import { doctorService } from "../services/doctorService";
 import type { Doctor } from "../types/doctor";
 
@@ -18,10 +18,10 @@ const Doctors = () => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-  const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
@@ -47,9 +47,9 @@ const Doctors = () => {
     try {
       const response = await doctorService.createDoctor(data);
       if (response.success) {
-        setIsModalOpen(false);
+        setIsAddModalOpen(false);
         showToast("Doctor created successfully!", "success");
-        fetchDoctors(); // Refresh the list
+        fetchDoctors();
       } else {
         showToast(response.message || "Failed to create doctor", "error");
       }
@@ -61,15 +61,24 @@ const Doctors = () => {
     }
   };
 
-  const handleEditDoctor = async (data: DoctorFormData) => {
-    if (!editingDoctor) return;
+  const handleUpdateDoctor = async (data: DoctorFormData) => {
+    if (!selectedDoctor) return;
     setIsSubmitting(true);
     try {
-      const response = await doctorService.updateDoctor(editingDoctor.id, data);
+      const response = await doctorService.updateDoctor(
+        selectedDoctor.id,
+        data
+      );
       if (response.success) {
-        setEditingDoctor(null);
         showToast("Doctor updated successfully!", "success");
         fetchDoctors();
+        // Refresh selected doctor data
+        const updatedResponse = await doctorService.getDoctor(
+          selectedDoctor.id
+        );
+        if (updatedResponse.success) {
+          setSelectedDoctor(updatedResponse.data);
+        }
       } else {
         showToast(response.message || "Failed to update doctor", "error");
       }
@@ -81,10 +90,24 @@ const Doctors = () => {
     }
   };
 
+  const handleViewDoctor = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    setModalMode("view");
+  };
+
+  const handleEditDoctor = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    setModalMode("edit");
+  };
+
+  const handleCloseModal = () => {
+    setSelectedDoctor(null);
+  };
+
   const filteredDoctors = doctors.filter(
     (doctor) =>
       doctor.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.kode.toLowerCase().includes(searchTerm.toLowerCase())
+      doctor.kode_dokter.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -101,12 +124,12 @@ const Doctors = () => {
               Doctor Management
             </h1>
             <p className="text-slate-500">
-              Manage doctor data, schedules, and assignments
+              Manage doctor data, credentials, schedules, and assignments
             </p>
           </div>
           <Button
             icon={<Plus size={20} />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsAddModalOpen(true)}
           >
             Add New Doctor
           </Button>
@@ -126,51 +149,37 @@ const Doctors = () => {
           <DoctorTable
             doctors={filteredDoctors}
             isLoading={loading}
-            onView={(doctor) => setSelectedDoctor(doctor)}
-            onEdit={(doctor) => setEditingDoctor(doctor)}
+            onView={handleViewDoctor}
+            onEdit={handleEditDoctor}
           />
         </Card>
 
         {/* Add Doctor Modal */}
         <Modal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
           title="Add New Doctor"
           size="xl"
         >
           <DoctorForm
             onSubmit={handleCreateDoctor}
-            onCancel={() => setIsModalOpen(false)}
+            onCancel={() => setIsAddModalOpen(false)}
             isLoading={isSubmitting}
           />
         </Modal>
 
-        {/* View Doctor Modal */}
-        <Modal
-          isOpen={!!selectedDoctor}
-          onClose={() => setSelectedDoctor(null)}
-          title="Doctor Information"
-          size="xl"
-        >
-          {selectedDoctor && <DoctorDetail doctor={selectedDoctor} />}
-        </Modal>
-
-        {/* Edit Doctor Modal */}
-        <Modal
-          isOpen={!!editingDoctor}
-          onClose={() => setEditingDoctor(null)}
-          title="Edit Doctor"
-          size="xl"
-        >
-          {editingDoctor && (
-            <DoctorForm
-              onSubmit={handleEditDoctor}
-              onCancel={() => setEditingDoctor(null)}
-              initialData={editingDoctor}
-              isLoading={isSubmitting}
-            />
-          )}
-        </Modal>
+        {/* Doctor Detail/Edit Modal with Tabs */}
+        {selectedDoctor && (
+          <DoctorModal
+            doctor={selectedDoctor}
+            isOpen={!!selectedDoctor}
+            onClose={handleCloseModal}
+            mode={modalMode}
+            onModeChange={setModalMode}
+            onUpdate={handleUpdateDoctor}
+            isSubmitting={isSubmitting}
+          />
+        )}
       </div>
     </>
   );

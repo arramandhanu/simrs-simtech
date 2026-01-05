@@ -19,7 +19,7 @@ interface DoctorTableProps {
   onEdit?: (doctor: Doctor) => void;
 }
 
-type SortKey = "kode" | "nama" | "no_sip" | "spesialisasi" | "status_aktif";
+type SortKey = "kode_dokter" | "nama" | "email" | "no_hp" | "status";
 type SortDirection = "asc" | "desc" | null;
 
 export const DoctorTable = ({
@@ -49,7 +49,6 @@ export const DoctorTable = ({
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
-      // Cycle: asc -> desc -> null
       if (sortDirection === "asc") {
         setSortDirection("desc");
       } else if (sortDirection === "desc") {
@@ -60,7 +59,7 @@ export const DoctorTable = ({
       setSortKey(key);
       setSortDirection("asc");
     }
-    setCurrentPage(1); // Reset to first page when sorting
+    setCurrentPage(1);
   };
 
   const getSortIcon = (key: SortKey) => {
@@ -85,7 +84,6 @@ export const DoctorTable = ({
     );
   }
 
-  // Pagination Logic
   const totalPages = Math.ceil(sortedDoctors.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedDoctors = sortedDoctors.slice(
@@ -115,17 +113,23 @@ export const DoctorTable = ({
     </th>
   );
 
+  const formatGender = (gender?: string) => {
+    if (gender === "L") return "Laki-laki";
+    if (gender === "P") return "Perempuan";
+    return "-";
+  };
+
   return (
     <div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-200">
-              <SortableHeader label="Kode" sortKeyName="kode" />
+              <SortableHeader label="Kode" sortKeyName="kode_dokter" />
               <SortableHeader label="Nama" sortKeyName="nama" />
-              <SortableHeader label="SIP" sortKeyName="no_sip" />
-              <SortableHeader label="Spesialisasi" sortKeyName="spesialisasi" />
-              <SortableHeader label="Status" sortKeyName="status_aktif" />
+              <SortableHeader label="Email" sortKeyName="email" />
+              <SortableHeader label="No. HP" sortKeyName="no_hp" />
+              <SortableHeader label="Status" sortKeyName="status" />
               <th className="py-4 px-4 text-sm font-semibold text-slate-600 text-right">
                 Actions
               </th>
@@ -138,29 +142,32 @@ export const DoctorTable = ({
                 className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
               >
                 <td className="py-3 px-4 text-sm font-medium text-slate-900">
-                  {doctor.kode}
+                  {doctor.kode_dokter}
                 </td>
                 <td className="py-3 px-4 text-sm text-slate-600">
                   <div className="font-medium text-slate-900">
-                    {doctor.nama}
+                    {doctor.gelar_depan} {doctor.nama}
+                    {doctor.gelar_belakang ? `, ${doctor.gelar_belakang}` : ""}
                   </div>
-                  <div className="text-xs text-slate-500">{doctor.email}</div>
+                  <div className="text-xs text-slate-500">
+                    {formatGender(doctor.jenis_kelamin)}
+                  </div>
                 </td>
                 <td className="py-3 px-4 text-sm text-slate-600">
-                  {doctor.no_sip || "-"}
+                  {doctor.email || "-"}
                 </td>
                 <td className="py-3 px-4 text-sm text-slate-600">
-                  {doctor.spesialisasi || "-"}
+                  {doctor.no_hp || "-"}
                 </td>
                 <td className="py-3 px-4 text-sm">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      doctor.status_aktif === "Aktif"
+                      doctor.status === "AKTIF"
                         ? "bg-green-100 text-green-700"
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
-                    {doctor.status_aktif || "Unknown"}
+                    {doctor.status || "Unknown"}
                   </span>
                 </td>
                 <td className="py-3 px-4 text-right">
@@ -191,7 +198,6 @@ export const DoctorTable = ({
         </table>
       </div>
 
-      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-4 border-t border-slate-200">
           <div className="text-sm text-slate-500">

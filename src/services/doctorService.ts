@@ -15,7 +15,7 @@ export const doctorService = {
     return await apiClient.post<Doctor>('/doctors', data);
   },
 
-  async updateDoctor(id: number, data: Partial<Doctor>): Promise<ApiResponse<Doctor>> {
+  async updateDoctor(id: string, data: Partial<Doctor>): Promise<ApiResponse<Doctor>> {
     return await apiClient.put<Doctor>(`/doctors/${id}`, data);
   }
 };

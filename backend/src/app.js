@@ -34,6 +34,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dashboard', authMiddleware, require('./routes/dashboardRoutes'));
 app.use('/api/patients', authMiddleware, require('./routes/patientRoutes'));
 app.use('/api/doctors', authMiddleware, require('./routes/doctorRoutes'));
+app.use('/api/spesialis', authMiddleware, require('./routes/spesialisRoutes'));
 
 // Start Server
 app.listen(PORT, () => {
