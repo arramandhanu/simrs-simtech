@@ -1,0 +1,43 @@
+services:
+  simrs-frontend:
+    image: aryaramandhanu/simrs-simtech-fe:latest
+    container_name: simrs-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - simrs-backend
+    restart: always
+
+  simrs-backend:
+    image: aryaramandhanu/simrs-simtech-be:latest
+    container_name: simrs-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_USER=${DB_USER:-simrs_user}
+      - DB_PASSWORD=${DB_PASSWORD:-simrs_pass}
+      - DB_NAME=${DB_NAME:-simrs_db}
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+    depends_on:
+      - postgres
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: simrs-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER:-simrs_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-simrs_pass}
+      - POSTGRES_DB=${DB_NAME:-simrs_db}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:
