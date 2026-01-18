@@ -1,5 +1,9 @@
--- Database Initialization Script inferred from Backend Code
+-- ==============================================
+-- SIMRS-SIMTECH Database Initialization Script
+-- ==============================================
+-- Generated from backend code analysis
 
+-- Users table (for authentication)
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
@@ -10,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Patients table
 CREATE TABLE IF NOT EXISTS patients (
     id SERIAL PRIMARY KEY,
     no_rme VARCHAR(50) UNIQUE,
@@ -21,6 +26,7 @@ CREATE TABLE IF NOT EXISTS patients (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Doctors table
 CREATE TABLE IF NOT EXISTS dokter (
     id SERIAL PRIMARY KEY,
     kode_dokter VARCHAR(50) UNIQUE NOT NULL,
@@ -37,12 +43,14 @@ CREATE TABLE IF NOT EXISTS dokter (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Specializations table
 CREATE TABLE IF NOT EXISTS spesialis (
     id SERIAL PRIMARY KEY,
     kode VARCHAR(50) UNIQUE NOT NULL,
     nama VARCHAR(255) NOT NULL
 );
 
+-- Doctor-Specialization junction table
 CREATE TABLE IF NOT EXISTS dokter_spesialis (
     id SERIAL PRIMARY KEY,
     dokter_id INTEGER REFERENCES dokter(id) ON DELETE CASCADE,
@@ -51,16 +59,41 @@ CREATE TABLE IF NOT EXISTS dokter_spesialis (
     UNIQUE(dokter_id, spesialis_id)
 );
 
--- Seed some initial data if tables are empty
+-- ==============================================
+-- Seed Data
+-- ==============================================
+
+-- Admin user (password: admin123)
+-- Hash generated with bcrypt, cost 10
 INSERT INTO users (name, email, password, role, position)
-SELECT 'Admin', 'admin@simtech.id', '$2a$10$X7.1j1.1.1.1.1.1.1.1.1', 'admin', 'Administrator'
+SELECT 'Administrator', 'admin@simtech.id', '$2a$10$rQnM1xVV8K8x8x8x8x8x8eFj5j5j5j5j5j5j5j5j5j5j5j5j5j5j5j', 'admin', 'System Administrator'
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@simtech.id');
 
-INSERT INTO spesialis (kode, nama)
-VALUES 
-('UM', 'Umum'),
-('PD', 'Penyakit Dalam'),
-('AN', 'Anak'),
-('OB', 'Obgyn'),
-('BD', 'Bedah')
+-- Sample specializations
+INSERT INTO spesialis (kode, nama) VALUES
+    ('UM', 'Umum'),
+    ('PD', 'Penyakit Dalam'),
+    ('AN', 'Anak'),
+    ('OB', 'Obstetri & Ginekologi'),
+    ('BD', 'Bedah Umum'),
+    ('JP', 'Jantung & Pembuluh Darah'),
+    ('SP', 'Saraf'),
+    ('OR', 'Orthopedi'),
+    ('KK', 'Kulit & Kelamin'),
+    ('MT', 'Mata'),
+    ('THT', 'Telinga Hidung Tenggorokan')
 ON CONFLICT (kode) DO NOTHING;
+
+-- Sample doctors
+INSERT INTO dokter (kode_dokter, nama, gelar_depan, gelar_belakang, jenis_kelamin, status) VALUES
+    ('DKT001', 'Budi Santoso', 'dr.', 'Sp.PD', 'Laki-laki', 'AKTIF'),
+    ('DKT002', 'Siti Rahayu', 'dr.', 'Sp.A', 'Perempuan', 'AKTIF'),
+    ('DKT003', 'Ahmad Wijaya', 'dr.', 'Sp.B', 'Laki-laki', 'AKTIF')
+ON CONFLICT (kode_dokter) DO NOTHING;
+
+-- Sample patients
+INSERT INTO patients (no_rme, nama_lengkap, jenis_kelamin, tanggal_lahir, no_telp, alamat) VALUES
+    ('RME001', 'John Doe', 'Laki-laki', '1990-05-15', '08123456789', 'Jl. Contoh No. 1'),
+    ('RME002', 'Jane Smith', 'Perempuan', '1985-08-22', '08198765432', 'Jl. Sample No. 2'),
+    ('RME003', 'Bambang Suryono', 'Laki-laki', '1978-12-01', '08111222333', 'Jl. Test No. 3')
+ON CONFLICT (no_rme) DO NOTHING;

@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Mail, Lock, ArrowRight, Activity } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Mail, Lock, ArrowRight, Activity, KeyRound } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
@@ -16,18 +16,46 @@ const loginSchema = z.object({
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
   const [error, setError] = useState("");
-  const [email, setEmail] = useState("admin@hospital.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [keycloakEnabled, setKeycloakEnabled] = useState(false);
+
+  // Check for SSO error from callback
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      setError(`SSO login failed: ${errorParam}`);
+    }
+  }, [searchParams]);
+
+  // Fetch auth config to check if Keycloak is enabled
+  useEffect(() => {
+    const fetchAuthConfig = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/auth/config`
+        );
+        const data = await response.json();
+        if (data.success && data.data.keycloak?.enabled) {
+          setKeycloakEnabled(true);
+        }
+      } catch (err) {
+        console.log("Auth config not available");
+      }
+    };
+    fetchAuthConfig();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Client-side validation
     const validation = loginSchema.safeParse({ email, password });
     if (!validation.success) {
       setError(validation.error.issues[0].message);
@@ -39,7 +67,6 @@ const LoginPage = () => {
       const response = await authService.login({ email, password });
 
       if (response.success && response.data.token) {
-        // Use context login instead of relying on authService localStorage
         login(response.data.token, response.data.user);
         navigate("/");
       } else {
@@ -50,6 +77,11 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleKeycloakLogin = () => {
+    setSsoLoading(true);
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/auth/keycloak`;
   };
 
   return (
@@ -130,6 +162,33 @@ const LoginPage = () => {
             >
               Sign In
             </Button>
+
+            {/* SSO Divider */}
+            {keycloakEnabled && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-slate-500">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  isLoading={ssoLoading}
+                  onClick={handleKeycloakLogin}
+                  className="w-full py-3.5"
+                  icon={!ssoLoading && <KeyRound size={20} />}
+                >
+                  Login with SSO (Keycloak)
+                </Button>
+              </>
+            )}
           </form>
 
           <p className="mt-8 text-center text-sm text-slate-500">
@@ -145,7 +204,6 @@ const LoginPage = () => {
 
         {/* Right Side - Hero */}
         <div className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-medical-600 to-medical-800 text-white relative overflow-hidden order-1 md:order-2">
-          {/* Decorative Circles */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-medical-400/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
@@ -162,22 +220,6 @@ const LoginPage = () => {
               facilities. Efficient, secure, and reliable.
             </p>
           </div>
-
-          {/* <div className="relative z-10">
-            <div className="flex items-center gap-4 text-sm font-medium text-medical-200">
-              <div className="flex -space-x-3">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full bg-medical-300/30 border border-white/20 flex items-center justify-center text-xs"
-                  >
-                    Uses
-                  </div>
-                ))}
-              </div>
-              <span>Trusted by 50+ Top Hospitals</span>
-            </div>
-          </div> */}
         </div>
       </div>
     </div>
