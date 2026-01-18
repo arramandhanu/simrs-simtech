@@ -1,0 +1,68 @@
+# ==============================================
+# Docker Compose for Local Development
+# ==============================================
+# Uses local PostgreSQL instead of containerized
+# 
+# Usage:
+#   docker compose -f docker-compose.local.yml up -d
+#
+# Requirements:
+#   - PostgreSQL running locally on the host
+#   - .env file configured with DB credentials
+
+services:
+  simrs-frontend:
+    image: aryaramandhanu/simrs-simtech-fe:latest
+    container_name: simrs-frontend
+    ports:
+      - "${FRONTEND_PORT:-4173}:4173"
+    depends_on:
+      - simrs-backend
+    restart: always
+
+  simrs-backend:
+    image: aryaramandhanu/simrs-simtech-be:latest
+    container_name: simrs-backend
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      - PORT=5000
+      # Use host.docker.internal to connect to host's PostgreSQL
+      - DB_HOST=${DB_HOST:-host.docker.internal}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4173}
+      # Keycloak Configuration
+      - KEYCLOAK_ENABLED=${KEYCLOAK_ENABLED:-false}
+      - KEYCLOAK_URL=${KEYCLOAK_URL:-http://keycloak:8080}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-simrs}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-simrs-app}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_CALLBACK_URL=${KEYCLOAK_CALLBACK_URL:-http://localhost:5000/api/auth/keycloak/callback}
+    extra_hosts:
+      # Allows container to access host's localhost
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+  # Optional: Keycloak SSO
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: simrs-keycloak
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/${DB_NAME}
+      - KC_DB_USERNAME=${DB_USER}
+      - KC_DB_PASSWORD=${DB_PASSWORD}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: start-dev
+    restart: always
+    profiles:
+      - keycloak
