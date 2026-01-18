@@ -139,9 +139,9 @@ You need a running PostgreSQL instance. You can use Docker for just the database
 ```bash
 docker run -d \
   --name simrs-postgres \
-  -e POSTGRES_USER=simrs_user \
-  -e POSTGRES_PASSWORD=simrs_pass \
-  -e POSTGRES_DB=simrs_db \
+  -e POSTGRES_USER=$DB_USER \
+  -e POSTGRES_PASSWORD=$DB_PASSWORD \
+  -e POSTGRES_DB=$DB_NAME \
   -p 5432:5432 \
   -v $(pwd)/init.sql:/docker-entrypoint-initdb.d/init.sql \
   postgres:15-alpine
@@ -198,7 +198,7 @@ docker compose --profile keycloak up -d
 ```
 
 Additional service:
-- **Keycloak Admin**: http://localhost:8080 (admin/admin)
+- **Keycloak Admin**: http://localhost:8080 (login with your configured credentials)
 
 ### Option B: Build Images Manually
 
@@ -293,8 +293,8 @@ Use the API to register:
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@hospital.com",
-    "password": "admin123",
+    "email": "admin@yourdomain.com",
+    "password": "YOUR_SECURE_PASSWORD",
     "name": "Administrator"
   }'
 ```
@@ -305,8 +305,8 @@ curl -X POST http://localhost:5000/api/auth/register \
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@hospital.com",
-    "password": "admin123"
+    "email": "admin@yourdomain.com",
+    "password": "YOUR_PASSWORD"
   }'
 ```
 
@@ -314,9 +314,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 
 #### Step 1: Access Keycloak Admin Console
 
-Navigate to http://localhost:8080 and login with:
-- Username: `admin`
-- Password: `admin`
+Navigate to http://localhost:8080 and login with the credentials you set in `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` environment variables.
 
 #### Step 2: Create a Realm
 

@@ -19,15 +19,14 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
+        envFrom:
+        - secretRef:
+            name: backend-secrets
         env:
         - name: PORT
           value: "5000"
         - name: DB_HOST
           value: "postgres"
-        - name: DB_USER
-          value: "simrs_user"
-        - name: DB_PASSWORD
-          value: "simrs_password"
         - name: DB_NAME
           value: "simrs_db"
         resources:

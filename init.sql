@@ -1,7 +1,7 @@
--- ==============================================
--- SIMRS-SIMTECH Database Initialization Script
--- ==============================================
--- Generated from backend code analysis
+# ==============================================
+# SIMRS-SIMTECH Database Initialization Script
+# ==============================================
+# Generated from backend code analysis
 
 -- Users table (for authentication)
 CREATE TABLE IF NOT EXISTS users (
@@ -60,14 +60,10 @@ CREATE TABLE IF NOT EXISTS dokter_spesialis (
 );
 
 -- ==============================================
--- Seed Data
+-- Seed Data (Non-sensitive only)
 -- ==============================================
-
--- Admin user (password: admin123)
--- Hash generated with bcrypt, cost 10
-INSERT INTO users (name, email, password, role, position)
-SELECT 'Administrator', 'admin@simtech.id', '$2a$10$rQnM1xVV8K8x8x8x8x8x8eFj5j5j5j5j5j5j5j5j5j5j5j5j5j5j5j', 'admin', 'System Administrator'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@simtech.id');
+-- NOTE: Create admin user via API after deployment
+-- Use: POST /api/auth/register
 
 -- Sample specializations
 INSERT INTO spesialis (kode, nama) VALUES
