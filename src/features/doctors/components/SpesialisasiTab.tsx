@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Trash2 } from "lucide-react";
 import { Button } from "../../../components/common/Button";
 import { Card } from "../../../components/common/Card";
 import { spesialisService } from "../../../services/spesialisService";
@@ -83,6 +83,31 @@ export const SpesialisasiTab = ({
     }
   };
 
+  const handleDeleteTambahan = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      // Save with only utama, removing tambahan
+      const response = await spesialisService.updateDokterSpesialis(dokterId, {
+        spesialis_utama_id: spesialisUtamaId || undefined,
+        spesialis_tambahan_id: undefined,
+      });
+
+      if (response.success) {
+        setDokterSpesialis(response.data);
+        setSpesialisTambahanId("");
+        onSuccess?.();
+      } else {
+        setError(response.message || "Failed to delete");
+      }
+    } catch (err) {
+      console.error("Error deleting tambahan:", err);
+      setError("An error occurred while deleting");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Validation
   const isUtamaEmpty = !spesialisUtamaId;
   const isDuplicate =
@@ -109,79 +134,119 @@ export const SpesialisasiTab = ({
           </div>
         )}
 
-        {/* Spesialisasi Utama */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Spesialisasi Utama
-          </label>
-          <select
-            value={spesialisUtamaId}
-            onChange={(e) => setSpesialisUtamaId(e.target.value)}
-            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
-          >
-            <option value="">-- Pilih Spesialisasi Utama --</option>
-            {spesialisList.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nama} ({s.kode})
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-slate-500">
-            Primary specialization for this doctor
-          </p>
-        </div>
-
-        {/* Spesialisasi Tambahan */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Spesialisasi Tambahan
-          </label>
-          <select
-            value={spesialisTambahanId}
-            onChange={(e) => setSpesialisTambahanId(e.target.value)}
-            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
-          >
-            <option value="">-- Pilih Spesialisasi Tambahan --</option>
-            {spesialisList
-              .filter((s) => s.id !== spesialisUtamaId) // Exclude primary
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nama} ({s.kode})
-                </option>
-              ))}
-          </select>
-          <p className="mt-1 text-xs text-slate-500">
-            Additional/secondary specialization (optional)
-          </p>
-        </div>
-
-        {/* Current Assignments Display */}
+        {/* Current Assignments Table */}
         {dokterSpesialis.length > 0 && (
-          <div className="pt-4 border-t border-slate-200">
-            <h4 className="text-sm font-medium text-slate-700 mb-3">
-              Current Assignments
+          <div>
+            <h4 className="text-sm font-semibold text-slate-700 mb-3">
+              Spesialisasi Terdaftar
             </h4>
-            <div className="flex flex-wrap gap-2">
-              {dokterSpesialis.map((ds) => (
-                <span
-                  key={ds.spesialis_id}
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                    ds.is_utama
-                      ? "bg-medical-100 text-medical-700"
-                      : "bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  {ds.spesialis?.nama || ds.spesialis_id}
-                  {ds.is_utama && (
-                    <span className="ml-2 text-xs bg-medical-600 text-white px-1.5 py-0.5 rounded">
-                      Utama
-                    </span>
-                  )}
-                </span>
-              ))}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">
+                      Spesialisasi
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">
+                      Tipe
+                    </th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">
+                      Aksi
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dokterSpesialis.map((ds) => (
+                    <tr
+                      key={ds.spesialis_id}
+                      className="border-t border-slate-100"
+                    >
+                      <td className="px-4 py-3 text-sm text-slate-800">
+                        {ds.spesialis?.nama || ds.spesialis_id}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            ds.is_utama
+                              ? "bg-medical-100 text-medical-700"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {ds.is_utama ? "Utama" : "Tambahan"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {!ds.is_utama ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            icon={<Trash2 size={16} />}
+                            onClick={handleDeleteTambahan}
+                            disabled={saving}
+                          />
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
+
+        {/* Add/Edit Spesialisasi Section */}
+        <div className="pt-4 border-t border-slate-200">
+          <h4 className="text-sm font-semibold text-slate-700 mb-4">
+            {dokterSpesialis.length > 0
+              ? "Ubah Spesialisasi"
+              : "Tambah Spesialisasi"}
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Spesialisasi Utama */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Spesialisasi Utama *
+              </label>
+              <select
+                value={spesialisUtamaId}
+                onChange={(e) => setSpesialisUtamaId(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
+              >
+                <option value="">-- Pilih Spesialisasi Utama --</option>
+                {spesialisList.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nama} ({s.kode})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Spesialisasi Tambahan */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Spesialisasi Tambahan
+              </label>
+              <select
+                value={spesialisTambahanId}
+                onChange={(e) => setSpesialisTambahanId(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-medical-500 focus:border-transparent"
+              >
+                <option value="">-- Pilih Spesialisasi Tambahan --</option>
+                {spesialisList
+                  .filter((s) => s.id !== spesialisUtamaId)
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nama} ({s.kode})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
         {/* Validation Warnings */}
         {isUtamaEmpty && (
