@@ -2,13 +2,17 @@
 # Docker Compose for Local Development
 # ==============================================
 # Uses local PostgreSQL instead of containerized
-# 
+#
 # Usage:
 #   docker compose -f docker-compose.local.yml up -d
+#
+# With Keycloak:
+#   docker compose -f docker-compose.local.yml --profile keycloak up -d
 #
 # Requirements:
 #   - PostgreSQL running locally on the host
 #   - .env file configured with DB credentials
+#   - For Keycloak: create 'keycloak' database (see docs/DATABASE_SETUP.md)
 
 services:
   simrs-frontend:
@@ -27,27 +31,26 @@ services:
       - "${BACKEND_PORT:-5000}:5000"
     environment:
       - PORT=5000
-      # Use host.docker.internal to connect to host's PostgreSQL
       - DB_HOST=${DB_HOST:-host.docker.internal}
       - DB_PORT=${DB_PORT:-5432}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+      - DB_SSL=${DB_SSL:-false}
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4173}
       # Keycloak Configuration
       - KEYCLOAK_ENABLED=${KEYCLOAK_ENABLED:-false}
-      - KEYCLOAK_URL=${KEYCLOAK_URL:-http://keycloak:8080}
+      - KEYCLOAK_URL=${KEYCLOAK_URL:-http://localhost:8080}
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-simrs}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-simrs-app}
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - KEYCLOAK_CALLBACK_URL=${KEYCLOAK_CALLBACK_URL:-http://localhost:5000/api/auth/keycloak/callback}
     extra_hosts:
-      # Allows container to access host's localhost
       - "host.docker.internal:host-gateway"
     restart: always
 
-  # Optional: Keycloak SSO
+  # Keycloak SSO (enable with --profile keycloak)
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     container_name: simrs-keycloak
@@ -56,10 +59,11 @@ services:
     environment:
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      # Keycloak uses its own database
       - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/${DB_NAME}
-      - KC_DB_USERNAME=${DB_USER}
-      - KC_DB_PASSWORD=${DB_PASSWORD}
+      - KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/${KEYCLOAK_DB_NAME:-keycloak}
+      - KC_DB_USERNAME=${KEYCLOAK_DB_USER:-keycloak}
+      - KC_DB_PASSWORD=${KEYCLOAK_DB_PASSWORD:-keycloak_pass}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: start-dev
