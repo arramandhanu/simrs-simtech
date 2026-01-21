@@ -1,3 +1,15 @@
+# ==============================================
+# Docker Compose - Full Stack with PostgreSQL
+# ==============================================
+# Includes containerized PostgreSQL
+#
+# Usage:
+#   docker compose up -d
+#
+# Requirements:
+#   - .env file configured
+#   - Keycloak running separately (if SSO enabled)
+
 services:
   simrs-frontend:
     image: aryaramandhanu/simrs-simtech-fe:latest
@@ -15,19 +27,22 @@ services:
       - "${BACKEND_PORT:-5000}:5000"
     environment:
       - PORT=5000
-      - DB_HOST=${DB_HOST}
+      # Database Configuration
+      - DB_HOST=postgres
+      - DB_PORT=5432
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
+      - DB_SSL=${DB_SSL:-false}
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:4173}
-      # Keycloak Configuration
+      # Keycloak SSO (connects to external Keycloak)
       - KEYCLOAK_ENABLED=${KEYCLOAK_ENABLED:-false}
-      - KEYCLOAK_URL=${KEYCLOAK_URL:-http://keycloak:8080}
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
       - KEYCLOAK_REALM=${KEYCLOAK_REALM:-simrs}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID:-simrs-app}
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-      - KEYCLOAK_CALLBACK_URL=${KEYCLOAK_CALLBACK_URL:-http://localhost:5000/api/auth/keycloak/callback}
+      - KEYCLOAK_CALLBACK_URL=${KEYCLOAK_CALLBACK_URL}
     depends_on:
       - postgres
     restart: always
@@ -45,26 +60,6 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
     restart: always
-
-  # Keycloak SSO (optional - enable with --profile keycloak)
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    container_name: simrs-keycloak
-    ports:
-      - "${KEYCLOAK_PORT:-8080}:8080"
-    environment:
-      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://postgres:5432/${DB_NAME}
-      - KC_DB_USERNAME=${DB_USER}
-      - KC_DB_PASSWORD=${DB_PASSWORD}
-    command: start-dev
-    depends_on:
-      - postgres
-    restart: always
-    profiles:
-      - keycloak
 
 volumes:
   postgres_data:
