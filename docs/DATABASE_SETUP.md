@@ -260,6 +260,38 @@ sudo firewall-cmd --reload
 
 ---
 
+## Keycloak Database Setup (Optional)
+
+If you're using Keycloak SSO, you need a separate database for Keycloak.
+
+### Create Keycloak Database and User
+
+```sql
+-- Connect as postgres superuser
+sudo -u postgres psql
+
+-- Create Keycloak user
+CREATE USER keycloak WITH PASSWORD 'Keycloak123!';
+
+-- Create Keycloak database
+CREATE DATABASE keycloak OWNER keycloak;
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
+
+-- Connect to keycloak database and grant schema permissions
+\c keycloak
+GRANT ALL ON SCHEMA public TO keycloak;
+```
+
+### Verify Connection
+
+```bash
+psql -h localhost -U keycloak -d keycloak -c "SELECT 1"
+```
+
+---
+
 ## Troubleshooting
 
 ### Connection refused
