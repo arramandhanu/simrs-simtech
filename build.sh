@@ -58,6 +58,7 @@ PUSH=true
 TAG_LATEST=false
 BUILD_FRONTEND=true
 BUILD_BACKEND=true
+NO_CACHE=false
 
 for arg in "$@"; do
     case $arg in
@@ -65,6 +66,7 @@ for arg in "$@"; do
         --latest) TAG_LATEST=true ;;
         --fe-only) BUILD_BACKEND=false ;;
         --be-only) BUILD_FRONTEND=false ;;
+        --no-cache) NO_CACHE=true ;;
     esac
 done
 
@@ -125,6 +127,10 @@ if [ "$BUILD_FRONTEND" = true ]; then
         BUILD_ARGS+=(-t "${FRONTEND_IMAGE}:latest")
     fi
     
+    if [ "$NO_CACHE" = true ]; then
+        BUILD_ARGS+=(--no-cache)
+    fi
+    
     if [ "$PUSH" = true ]; then
         BUILD_ARGS+=(--push)
     else
@@ -154,6 +160,10 @@ if [ "$BUILD_BACKEND" = true ]; then
     
     if [ "$TAG_LATEST" = true ]; then
         BUILD_ARGS+=(-t "${BACKEND_IMAGE}:latest")
+    fi
+    
+    if [ "$NO_CACHE" = true ]; then
+        BUILD_ARGS+=(--no-cache)
     fi
     
     if [ "$PUSH" = true ]; then
