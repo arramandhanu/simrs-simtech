@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const keycloakConfig = require('../config/keycloak');
+const { mapKeycloakGroupToRole } = require('../middleware/authMiddleware');
 
 // Helper function to generate JWT token
 const generateToken = (user) => {
@@ -99,6 +100,12 @@ exports.keycloakLogin = (req, res) => {
     scope: 'openid profile email'
   });
 
+  // Support kc_idp_hint to skip Keycloak login page and go directly to IdP (e.g., google)
+  if (req.query.kc_idp_hint) {
+    params.append('kc_idp_hint', req.query.kc_idp_hint);
+    console.log(`[SSO] Redirecting to IdP: ${req.query.kc_idp_hint}`);
+  }
+
   res.redirect(`${keycloakConfig.authUrl}?${params.toString()}`);
 };
 
@@ -138,19 +145,37 @@ exports.keycloakCallback = async (req, res) => {
 
     const userInfo = await userInfoResponse.json();
 
+    // Decode access token to get groups/roles
+    const accessTokenPayload = JSON.parse(
+      Buffer.from(tokenData.access_token.split('.')[1], 'base64').toString()
+    );
+
+    // Extract groups from token (Keycloak puts them in 'groups' claim)
+    const groups = accessTokenPayload.groups || [];
+    const mappedRole = mapKeycloakGroupToRole(groups);
+
+    console.log(`[SSO] User ${userInfo.email} - Groups: ${groups.join(', ')} -> Role: ${mappedRole}`);
+
     // Find or create user in database
     let { rows } = await db.query('SELECT * FROM users WHERE email = $1', [userInfo.email]);
 
     let user;
     if (rows.length === 0) {
-      // Create new user from Keycloak
+      // Create new user from Keycloak with mapped role
       const result = await db.query(
         'INSERT INTO users (email, name, role, password) VALUES ($1, $2, $3, $4) RETURNING *',
-        [userInfo.email, userInfo.name || userInfo.preferred_username, 'user', 'keycloak_sso']
+        [userInfo.email, userInfo.name || userInfo.preferred_username, mappedRole, 'keycloak_sso']
       );
       user = result.rows[0];
+      console.log(`[SSO] Created new user: ${user.email} with role: ${user.role}`);
     } else {
       user = rows[0];
+      // Update role if it changed in Keycloak (optional - sync role on each login)
+      if (user.role !== mappedRole && mappedRole !== 'user') {
+        await db.query('UPDATE users SET role = $1 WHERE id = $2', [mappedRole, user.id]);
+        user.role = mappedRole;
+        console.log(`[SSO] Updated user ${user.email} role to: ${mappedRole}`);
+      }
     }
 
     user.authProvider = 'keycloak';

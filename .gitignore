@@ -31,3 +31,4 @@ backend/.env
 
 docs/DATABASE_SETUP.md
 docs/KEYCLOAK_SETUP.md
+nginx/
