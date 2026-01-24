@@ -38,15 +38,20 @@ const UsersPage = () => {
             setLoading(true);
             setError(null);
             const statusFilter = activeTab === 'all' ? undefined : activeTab;
+            console.log('[Users] Fetching data with filter:', statusFilter);
             const [usersRes, rolesRes] = await Promise.all([
                 userService.getAllUsers(statusFilter),
                 userService.getRoles()
             ]);
-            if (usersRes.success) setUsers(usersRes.data);
+            console.log('[Users] API response:', usersRes);
+            if (usersRes.success) {
+                console.log('[Users] Setting users:', usersRes.data.length, 'items');
+                setUsers(usersRes.data);
+            }
             if (rolesRes.success) setRoles(rolesRes.data);
         } catch (err) {
+            console.error('[Users] Fetch error:', err);
             setError('Failed to load users. You may not have permission.');
-            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -220,8 +225,8 @@ const UsersPage = () => {
                 <button
                     onClick={() => setActiveTab('all')}
                     className={`pb-3 px-1 border-b-2 font-medium transition ${activeTab === 'all'
-                            ? 'border-blue-600 text-blue-600'
-                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
                     All Users
@@ -229,8 +234,8 @@ const UsersPage = () => {
                 <button
                     onClick={() => setActiveTab('pending')}
                     className={`pb-3 px-1 border-b-2 font-medium transition flex items-center gap-2 ${activeTab === 'pending'
-                            ? 'border-amber-600 text-amber-600'
-                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                        ? 'border-amber-600 text-amber-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
                     <Clock size={16} />
@@ -244,8 +249,8 @@ const UsersPage = () => {
                 <button
                     onClick={() => setActiveTab('approved')}
                     className={`pb-3 px-1 border-b-2 font-medium transition flex items-center gap-2 ${activeTab === 'approved'
-                            ? 'border-green-600 text-green-600'
-                            : 'border-transparent text-slate-500 hover:text-slate-700'
+                        ? 'border-green-600 text-green-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                 >
                     <UserCheck size={16} />

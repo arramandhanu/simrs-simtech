@@ -98,115 +98,184 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 
 ## Step 5: Initialize Schema
 
+### Option A: Fresh Database (New Install)
+
 Run the `init.sql` script to create tables:
 
 ```bash
-# Option A: From command line
-psql -h your-server-ip -U simrs_app -d simrs_db -f init.sql
+# Using postgres superuser (recommended for servers)
+sudo -u postgres psql -d simrs_db -f init.sql
 
-# Option B: From psql prompt
-\c simrs_db
-\i /path/to/init.sql
+# Or with password auth
+psql -h localhost -U simrs_app -d simrs_db -f init.sql
 ```
 
-Or manually execute in psql:
+### Option B: Existing Database (Migration for User Approval Feature)
 
-```sql
-\c simrs_db
+If tables already exist, run the migration to add user approval columns:
 
--- Users table
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'user',
-    position VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Patients table
-CREATE TABLE IF NOT EXISTS patients (
-    id SERIAL PRIMARY KEY,
-    no_rme VARCHAR(50) UNIQUE,
-    nama_lengkap VARCHAR(255) NOT NULL,
-    jenis_kelamin VARCHAR(20),
-    tanggal_lahir DATE,
-    no_telp VARCHAR(50),
-    alamat TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Doctors table
-CREATE TABLE IF NOT EXISTS dokter (
-    id SERIAL PRIMARY KEY,
-    kode_dokter VARCHAR(50) UNIQUE NOT NULL,
-    nama VARCHAR(255) NOT NULL,
-    gelar_depan VARCHAR(50),
-    gelar_belakang VARCHAR(50),
-    jenis_kelamin VARCHAR(20),
-    tanggal_lahir DATE,
-    no_hp VARCHAR(50),
-    email VARCHAR(255),
-    alamat TEXT,
-    status VARCHAR(50) DEFAULT 'AKTIF',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Specializations table
-CREATE TABLE IF NOT EXISTS spesialis (
-    id SERIAL PRIMARY KEY,
-    kode VARCHAR(50) UNIQUE NOT NULL,
-    nama VARCHAR(255) NOT NULL
-);
-
--- Doctor-Specialization junction table
-CREATE TABLE IF NOT EXISTS dokter_spesialis (
-    id SERIAL PRIMARY KEY,
-    dokter_id INTEGER REFERENCES dokter(id) ON DELETE CASCADE,
-    spesialis_id INTEGER REFERENCES spesialis(id) ON DELETE CASCADE,
-    is_utama BOOLEAN DEFAULT FALSE,
-    UNIQUE(dokter_id, spesialis_id)
-);
+```bash
+sudo -u postgres psql -d simrs_db -c "
+ALTER TABLE users ADD COLUMN IF NOT EXISTS keycloak_id VARCHAR(255) UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by INTEGER REFERENCES users(id);
+ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
+UPDATE users SET status = 'approved' WHERE status IS NULL OR status = '';
+"
 ```
 
 ---
 
-## Step 6: Verify Setup
+## Current Users Table Schema
+
+As of `feature/user-management` branch:
 
 ```sql
--- Connect as app user
-\c simrs_db simrs_app
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255),                    -- NULLABLE for SSO users
+    role VARCHAR(50) DEFAULT 'user',
+    position VARCHAR(100),
+    keycloak_id VARCHAR(255) UNIQUE,          -- Links to Keycloak user UUID
+    status VARCHAR(50) DEFAULT 'pending',     -- pending, approved, rejected, suspended
+    approved_at TIMESTAMP,                     -- When admin approved
+    approved_by INTEGER REFERENCES users(id),  -- Admin who approved
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Column Reference
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | SERIAL | NO | auto | Primary key |
+| `name` | VARCHAR(255) | YES | NULL | User's display name |
+| `email` | VARCHAR(255) | NO | - | Unique email address |
+| `password` | VARCHAR(255) | YES | NULL | Hashed password (NULL for SSO users) |
+| `role` | VARCHAR(50) | NO | 'user' | admin, doctor, nurse, staff, readonly, user |
+| `position` | VARCHAR(100) | YES | NULL | Job title/position |
+| `keycloak_id` | VARCHAR(255) | YES | NULL | Keycloak user UUID (sub claim) |
+| `status` | VARCHAR(50) | NO | 'pending' | User approval status |
+| `approved_at` | TIMESTAMP | YES | NULL | When user was approved |
+| `approved_by` | INTEGER | YES | NULL | FK to approving admin's user.id |
+| `created_at` | TIMESTAMP | NO | NOW() | Record creation time |
+
+---
+
+## Step 6: Create First Admin User
+
+After running init.sql or migration, approve your first admin:
+
+```bash
+# Replace with your actual email
+sudo -u postgres psql -d simrs_db -c "UPDATE users SET status='approved', role='admin' WHERE email='your-admin@email.com';"
+```
+
+Or insert a new admin directly:
+
+```bash
+sudo -u postgres psql -d simrs_db -c "
+INSERT INTO users (name, email, role, status, password) 
+VALUES ('Administrator', 'admin@hospital.com', 'admin', 'approved', 
+        '\$2a\$10\$YourHashedPasswordHere');
+"
+```
+
+---
+
+## Step 7: Verify Setup
+
+```sql
+-- Connect as postgres
+sudo -u postgres psql -d simrs_db
 
 -- Check tables
 \dt
 
--- You should see:
---  Schema |       Name        | Type  |  Owner
--- --------+-------------------+-------+----------
---  public | dokter            | table | simrs_app
---  public | dokter_spesialis  | table | simrs_app
---  public | patients          | table | simrs_app
---  public | spesialis         | table | simrs_app
---  public | users             | table | simrs_app
+-- Check users table structure
+\d users
+
+-- View existing users
+SELECT id, email, name, role, status, keycloak_id FROM users;
 
 -- Check permissions
 \dp users
 ```
 
+Expected output for `\d users`:
+
+```
+                                         Table "public.users"
+   Column    |            Type             | Collation | Nullable |              Default
+-------------+-----------------------------+-----------+----------+-----------------------------------
+ id          | integer                     |           | not null | nextval('users_id_seq'::regclass)
+ name        | character varying(255)      |           |          |
+ email       | character varying(255)      |           | not null |
+ password    | character varying(255)      |           |          |
+ role        | character varying(50)       |           |          | 'user'::character varying
+ position    | character varying(100)      |           |          |
+ created_at  | timestamp without time zone |           |          | CURRENT_TIMESTAMP
+ keycloak_id | character varying(255)      |           |          |
+ status      | character varying(50)       |           |          | 'pending'::character varying
+ approved_at | timestamp without time zone |           |          |
+ approved_by | integer                     |           |          |
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (id)
+    "users_email_key" UNIQUE CONSTRAINT, btree (email)
+    "users_keycloak_id_key" UNIQUE CONSTRAINT, btree (keycloak_id)
+Foreign-key constraints:
+    "users_approved_by_fkey" FOREIGN KEY (approved_by) REFERENCES users(id)
+```
+
 ---
 
-## Step 7: Configure Application
+## Step 8: Configure Application
 
 Update your `.env` file with the database credentials:
 
 ```bash
-DB_HOST=your-server-ip
+DB_HOST=your-server-ip        # Or 'host.docker.internal' for Docker
 DB_PORT=5432
 DB_USER=simrs_app
 DB_PASSWORD=YOUR_SECURE_PASSWORD
 DB_NAME=simrs_db
+```
+
+---
+
+## Common Operations
+
+### Approve a Pending User
+
+```bash
+sudo -u postgres psql -d simrs_db -c "UPDATE users SET status='approved', role='doctor' WHERE email='user@email.com';"
+```
+
+### Reject a User
+
+```bash
+sudo -u postgres psql -d simrs_db -c "UPDATE users SET status='rejected' WHERE email='user@email.com';"
+```
+
+### Change User Role
+
+```bash
+sudo -u postgres psql -d simrs_db -c "UPDATE users SET role='admin' WHERE email='user@email.com';"
+```
+
+### View Pending Users
+
+```bash
+sudo -u postgres psql -d simrs_db -c "SELECT id, email, name, status FROM users WHERE status='pending';"
+```
+
+### Delete a User
+
+```bash
+sudo -u postgres psql -d simrs_db -c "DELETE FROM users WHERE email='user@email.com';"
 ```
 
 ---
@@ -294,6 +363,16 @@ psql -h localhost -U keycloak -d keycloak -c "SELECT 1"
 
 ## Troubleshooting
 
+### Peer authentication failed
+
+```bash
+# Use -h localhost to force TCP/IP instead of Unix socket
+psql -h localhost -U simrs_app -d simrs_db
+
+# Or use postgres superuser
+sudo -u postgres psql -d simrs_db
+```
+
 ### Connection refused
 - Check PostgreSQL is running: `sudo systemctl status postgresql`
 - Check `listen_addresses` in `postgresql.conf`
@@ -306,3 +385,7 @@ psql -h localhost -U keycloak -d keycloak -c "SELECT 1"
 ### Authentication failed
 - Check password in `.env` matches what was set
 - Check `pg_hba.conf` allows your connection method
+
+### User status always 'pending'
+- Existing users after migration may have NULL status
+- Run: `UPDATE users SET status = 'approved' WHERE status IS NULL;`
