@@ -40,7 +40,7 @@ GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
 # Production API URL (default)
 VITE_API_BASE_URL_PROD="https://simrs.ramandhanu.cloud/api"
-VITE_API_BASE_URL_LOCAL="http://localhost:5000/api"
+VITE_API_BASE_URL_LOCAL="http://localhost:5001/api"
 VITE_API_BASE_URL="${VITE_API_BASE_URL:-${VITE_API_BASE_URL_PROD}}"
 
 # DockerHub
