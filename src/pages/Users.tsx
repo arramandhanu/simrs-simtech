@@ -34,26 +34,37 @@ const UsersPage = () => {
     }, []);
 
     const fetchData = async () => {
+        console.log('[Users] === fetchData START ===');
         try {
             setLoading(true);
             setError(null);
             const statusFilter = activeTab === 'all' ? undefined : activeTab;
-            console.log('[Users] Fetching data with filter:', statusFilter);
+            console.log('[Users] Filter:', statusFilter);
+
             const [usersRes, rolesRes] = await Promise.all([
                 userService.getAllUsers(statusFilter),
                 userService.getRoles()
             ]);
-            console.log('[Users] API response:', usersRes);
+
+            console.log('[Users] Raw usersRes:', JSON.stringify(usersRes, null, 2));
+            console.log('[Users] usersRes.success:', usersRes.success);
+            console.log('[Users] usersRes.data:', usersRes.data);
+            console.log('[Users] usersRes.data type:', typeof usersRes.data);
+            console.log('[Users] usersRes.data length:', usersRes.data?.length);
+
             if (usersRes.success) {
-                console.log('[Users] Setting users:', usersRes.data.length, 'items');
+                console.log('[Users] SUCCESS! Setting', usersRes.data.length, 'users');
                 setUsers(usersRes.data);
+            } else {
+                console.log('[Users] usersRes.success was FALSY:', usersRes.success);
             }
             if (rolesRes.success) setRoles(rolesRes.data);
         } catch (err) {
-            console.error('[Users] Fetch error:', err);
+            console.error('[Users] CATCH ERROR:', err);
             setError('Failed to load users. You may not have permission.');
         } finally {
             setLoading(false);
+            console.log('[Users] === fetchData END ===');
         }
     };
 
