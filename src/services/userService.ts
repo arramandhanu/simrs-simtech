@@ -72,7 +72,7 @@ export const userService = {
     },
 
     async rejectUser(id: string): Promise<ApiResponse<User>> {
-        const response = await apiClient.post<ApiResponse<User>>(`/users/${id}/reject`);
+        const response = await apiClient.post<ApiResponse<User>>(`/users/${id}/reject`, {});
         return response.data;
     },
 
