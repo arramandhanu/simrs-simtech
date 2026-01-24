@@ -84,3 +84,64 @@ INSERT INTO spesialis (kode, nama) VALUES
     ('MT', 'Mata'),
     ('THT', 'Telinga Hidung Tenggorokan')
 ON CONFLICT (kode) DO NOTHING;
+
+-- ==============================================
+-- User Settings table
+-- ==============================================
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    theme VARCHAR(20) DEFAULT 'light',
+    language VARCHAR(10) DEFAULT 'id',
+    notifications_enabled BOOLEAN DEFAULT TRUE,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    sidebar_collapsed BOOLEAN DEFAULT FALSE,
+    compact_mode BOOLEAN DEFAULT FALSE,
+    settings_json JSONB DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==============================================
+-- Hospital Settings table (system-wide)
+-- ==============================================
+CREATE TABLE IF NOT EXISTS hospital_settings (
+    id SERIAL PRIMARY KEY,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    setting_type VARCHAR(50) DEFAULT 'string',
+    description TEXT,
+    updated_by INTEGER REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Default hospital settings
+INSERT INTO hospital_settings (setting_key, setting_value, setting_type, description) VALUES
+    ('hospital_name', 'SIMRS SIMTECH', 'string', 'Hospital display name'),
+    ('hospital_address', '', 'string', 'Hospital address'),
+    ('hospital_phone', '', 'string', 'Hospital phone number'),
+    ('hospital_email', '', 'string', 'Hospital contact email'),
+    ('hospital_logo', '', 'string', 'Hospital logo URL'),
+    ('session_timeout_minutes', '60', 'number', 'Auto-logout after inactivity'),
+    ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
+    ('default_language', 'id', 'string', 'Default system language'),
+    ('date_format', 'DD/MM/YYYY', 'string', 'Date display format'),
+    ('time_format', 'HH:mm', 'string', 'Time display format')
+ON CONFLICT (setting_key) DO NOTHING;
+
+-- ==============================================
+-- Notifications table
+-- ==============================================
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    data JSONB DEFAULT '{}'::jsonb,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for faster notification queries
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);

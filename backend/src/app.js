@@ -62,6 +62,9 @@ app.use('/api/kredensial', authMiddleware, require('./routes/kredensialRoutes'))
 // Users: Admin only (role check is inside userRoutes)
 app.use('/api/users', authMiddleware, require('./routes/userRoutes'));
 
+// Settings: All authenticated users (role check inside for hospital settings)
+app.use('/api/settings', require('./routes/settingsRoutes'));
+
 // Static file serving for uploads
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

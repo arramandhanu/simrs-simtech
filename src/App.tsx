@@ -5,6 +5,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Doctors from "./pages/Doctors";
 import UsersPage from "./pages/Users";
+import SettingsPage from "./pages/Settings";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import { AuthProvider } from "./context/AuthContext";
@@ -62,7 +63,7 @@ function App() {
               />
               <Route
                 path="settings"
-                element={<div className="p-8">Settings Page (Coming Soon)</div>}
+                element={<SettingsPage />}
               />
               <Route path="users" element={<UsersPage />} />
             </Route>

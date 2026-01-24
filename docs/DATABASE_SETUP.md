@@ -125,6 +125,90 @@ UPDATE users SET status = 'approved' WHERE status IS NULL OR status = '';
 "
 ```
 
+### Option C: Add Settings & Notifications Tables
+
+If you need to add the Settings and Notifications feature tables:
+
+```bash
+# Create user_settings table
+sudo -u postgres psql -d simrs_db -c "
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    theme VARCHAR(20) DEFAULT 'light',
+    language VARCHAR(10) DEFAULT 'id',
+    notifications_enabled BOOLEAN DEFAULT TRUE,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    sidebar_collapsed BOOLEAN DEFAULT FALSE,
+    compact_mode BOOLEAN DEFAULT FALSE,
+    settings_json JSONB DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"
+
+# Create hospital_settings table
+sudo -u postgres psql -d simrs_db -c "
+CREATE TABLE IF NOT EXISTS hospital_settings (
+    id SERIAL PRIMARY KEY,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT,
+    setting_type VARCHAR(50) DEFAULT 'string',
+    description TEXT,
+    updated_by INTEGER REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO hospital_settings (setting_key, setting_value, setting_type, description) VALUES
+    ('hospital_name', 'SIMRS SIMTECH', 'string', 'Hospital display name'),
+    ('hospital_address', '', 'string', 'Hospital address'),
+    ('hospital_phone', '', 'string', 'Hospital phone number'),
+    ('hospital_email', '', 'string', 'Hospital contact email'),
+    ('hospital_logo', '', 'string', 'Hospital logo URL'),
+    ('session_timeout_minutes', '60', 'number', 'Auto-logout after inactivity'),
+    ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
+    ('default_language', 'id', 'string', 'Default system language'),
+    ('date_format', 'DD/MM/YYYY', 'string', 'Date display format'),
+    ('time_format', 'HH:mm', 'string', 'Time display format')
+ON CONFLICT (setting_key) DO NOTHING;
+"
+
+# Create notifications table
+sudo -u postgres psql -d simrs_db -c "
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    data JSONB DEFAULT '{}'::jsonb,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+"
+```
+
+### Option D: Re-initialize Entire Database (Fresh Start)
+
+⚠️ **WARNING: This will delete all existing data!**
+
+```bash
+# Drop and recreate database
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS simrs_db;"
+sudo -u postgres psql -c "CREATE DATABASE simrs_db;"
+
+# Run init.sql to create all tables
+sudo -u postgres psql -d simrs_db -f init.sql
+
+# Grant permissions to app user
+sudo -u postgres psql -d simrs_db -c "
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO simrs_app;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO simrs_app;
+"
+```
+
 ---
 
 ## Current Users Table Schema
