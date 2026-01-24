@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Users, Shield } from 'lucide-react';
-import { userService, User, Role, CreateUserData, UpdateUserData } from '../services/userService';
-import { useRole, ROLES } from '../components/auth/RoleGuard';
+import { Plus, Pencil, Trash2, Users as UsersIcon, Shield } from 'lucide-react';
+import { userService } from '../services/userService';
+import type { User, Role, CreateUserData, UpdateUserData } from '../services/userService';
+import { useRole } from '../components/auth/RoleGuard';
 
-const Users = () => {
+const UsersPage = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(true);
@@ -89,8 +90,9 @@ const Users = () => {
             }
             handleCloseModal();
             fetchData();
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Operation failed');
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || 'Operation failed');
         }
     };
 
@@ -99,8 +101,9 @@ const Users = () => {
         try {
             await userService.deleteUser(user.id);
             fetchData();
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete user');
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || 'Failed to delete user');
         }
     };
 
@@ -136,7 +139,7 @@ const Users = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <Users className="w-7 h-7" />
+                        <UsersIcon className="w-7 h-7" />
                         User Management
                     </h1>
                     <p className="text-slate-500">Manage system users and their roles</p>
@@ -300,4 +303,4 @@ const Users = () => {
     );
 };
 
-export default Users;
+export default UsersPage;

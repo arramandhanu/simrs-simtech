@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 interface RoleGuardProps {
@@ -41,7 +41,7 @@ export const RoleGuard = ({ children, allowedRoles, fallback = null }: RoleGuard
 export const useRole = () => {
     const { user } = useAuth();
 
-    const userRole = user?.role || '';
+    const userRole: string = user?.role || '';
 
     return {
         role: userRole,

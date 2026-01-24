@@ -4,7 +4,7 @@ import AuthCallback from "./pages/auth/AuthCallback";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Doctors from "./pages/Doctors";
-import Users from "./pages/Users";
+import UsersPage from "./pages/Users";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import { AuthProvider } from "./context/AuthContext";
@@ -64,7 +64,7 @@ function App() {
                 path="settings"
                 element={<div className="p-8">Settings Page (Coming Soon)</div>}
               />
-              <Route path="users" element={<Users />} />
+              <Route path="users" element={<UsersPage />} />
             </Route>
           </Route>
 
