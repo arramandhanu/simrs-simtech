@@ -14,13 +14,28 @@ Hospital Information System (Sistem Informasi Manajemen Rumah Sakit)
 
 ---
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Development](#development)
+- [Docker Deployment](#docker-deployment)
+- [Kubernetes Deployment](#kubernetes-deployment)
+- [Authentication](#authentication)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [React + TypeScript + Vite](#react--typescript--vite)
+- [License](#license)
+
+---
+
 ## Features
 
-- Patient Management
-- Doctor & Medical Staff Registry
-- Medical Specialization Tracking
-- Dashboard Analytics
-- Hybrid Authentication (Database + Keycloak SSO)
+- 🏥 **Patient Management** - Register and track patient records
+- 👨‍⚕️ **Doctor & Medical Staff Registry** - Manage healthcare professionals
+- 🩺 **Medical Specialization Tracking** - Organize by medical specialties
+- 📊 **Dashboard Analytics** - Visual insights and statistics
+- 🔐 **Hybrid Authentication** - Database + Keycloak SSO with Google login
 
 ---
 
@@ -28,9 +43,11 @@ Hospital Information System (Sistem Informasi Manajemen Rumah Sakit)
 
 ### Prerequisites
 
-- Node.js 20+
-- Docker & Docker Compose
-- PostgreSQL 15+ (local or containerized)
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | 20+ | Running frontend and backend |
+| Docker | 24+ | Containerization |
+| PostgreSQL | 15+ | Database (local or containerized) |
 
 ### 1. Clone & Configure
 
@@ -41,15 +58,13 @@ cp .env.template .env
 # Edit .env with your database credentials
 ```
 
-### 2. Run with Docker Compose
+### 2. Run with Docker
 
-**Option A: With containerized PostgreSQL (full stack)**
 ```bash
+# Full stack (with PostgreSQL container)
 docker compose up -d
-```
 
-**Option B: With local PostgreSQL**
-```bash
+# With local PostgreSQL
 docker compose -f docker-compose.local.yml up -d
 ```
 
@@ -59,52 +74,93 @@ docker compose -f docker-compose.local.yml up -d
 |---------|-----|
 | Frontend | http://localhost:4173 |
 | Backend API | http://localhost:5000 |
-| API Health Check | http://localhost:5000/api/health |
+| Health Check | http://localhost:5000/api/health |
 
 ---
 
-## Documentation
+## Development
 
-| Document | Description |
-|----------|-------------|
-| [SETUP.md](SETUP.md) | Complete setup guide |
-| [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | PostgreSQL configuration |
+### Install Dependencies
+
+```bash
+# Frontend
+npm install
+
+# Backend
+cd backend && npm install
+```
+
+### Run Locally
+
+```bash
+# Terminal 1: Start backend
+cd backend && npm run dev
+
+# Terminal 2: Start frontend
+npm run dev
+```
+
+### Build & Push Docker Images
+
+```bash
+# Build and push both images with git SHA tag
+./build.sh
+
+# Build with :latest tag
+./build.sh --latest
+
+# Build frontend only
+./build.sh --fe-only
+
+# Build backend only
+./build.sh --be-only
+
+# Build without pushing
+./build.sh --no-push
+```
 
 ---
 
-## Deployment Options
+## Docker Deployment
 
 ### Docker Compose Files
 
 | File | Use Case |
 |------|----------|
-| `docker-compose.yml` | Full stack with containerized PostgreSQL |
-| `docker-compose.local.yml` | Frontend + Backend only (uses local PostgreSQL) |
+| `docker-compose.yml` | Production (external PostgreSQL & Keycloak) |
+| `docker-compose.local.yml` | Development (includes PostgreSQL) |
 
-### Kubernetes (Kustomize)
+### Production Deployment
 
 ```bash
+# With environment file
+docker compose --env-file .env.production up -d
+
+# View logs
+docker compose logs -f
+
+# Restart services
+docker compose restart simrs-backend simrs-frontend
+```
+
+---
+
+## Kubernetes Deployment
+
+Deploy using Kustomize:
+
+```bash
+# Create namespace
+kubectl create namespace simrs-dev
+
 # Deploy backend
 kubectl apply -k deployment/backend/overlays/dev
 
 # Deploy frontend
 kubectl apply -k deployment/frontend/overlays/dev
-```
 
----
-
-## Project Structure
-
-```
-simrs-simtech/
-├── src/                    # React/Vite Frontend
-├── backend/                # Node.js/Express API
-├── deployment/             # Kubernetes manifests
-├── docs/                   # Additional documentation
-├── docker-compose.yml      # Full stack deployment
-├── docker-compose.local.yml # Local PostgreSQL deployment
-├── init.sql                # Database schema
-└── SETUP.md                # Setup guide
+# Check status
+kubectl get pods -n simrs-dev
 ```
 
 ---
@@ -113,10 +169,108 @@ simrs-simtech/
 
 The application supports two authentication methods:
 
-1. **Database Auth** - Email/password stored in PostgreSQL
-2. **Keycloak SSO** - Optional OAuth2/OIDC integration
+### 1. Database Auth
+Email/password stored in PostgreSQL. Default for all users.
 
-Set `KEYCLOAK_ENABLED=true` in `.env` to enable SSO.
+### 2. Keycloak SSO (Optional)
+OAuth2/OIDC integration with Google Identity Provider.
+
+```bash
+# Enable in .env
+KEYCLOAK_ENABLED=true
+KEYCLOAK_URL=https://auth.yourdomain.com
+KEYCLOAK_REALM=simrs
+KEYCLOAK_CLIENT_ID=simrs-app
+KEYCLOAK_CLIENT_SECRET=your_secret
+```
+
+See [SETUP.md](SETUP.md) for detailed Keycloak configuration.
+
+---
+
+## Project Structure
+
+```
+simrs-simtech/
+├── src/                        # React/Vite Frontend
+│   ├── components/             # Reusable UI components
+│   ├── pages/                  # Page components
+│   ├── context/                # React context (auth)
+│   └── services/               # API services
+├── backend/                    # Node.js/Express API
+│   ├── src/
+│   │   ├── config/            # Database & Keycloak config
+│   │   ├── controllers/       # Route handlers
+│   │   ├── middleware/        # Auth & RBAC middleware
+│   │   └── routes/            # API routes
+│   └── Dockerfile             # Backend Docker image
+├── deployment/                 # Kubernetes manifests
+│   ├── backend/               # Backend Kustomize
+│   └── frontend/              # Frontend Kustomize
+├── nginx/                      # Nginx configurations
+├── Dockerfile                  # Frontend Docker image
+├── docker-compose.yml          # Production compose
+├── docker-compose.local.yml    # Development compose
+├── build.sh                    # Docker build script
+├── init.sql                    # Database schema
+├── SETUP.md                    # Setup guide
+└── .env.template               # Environment template
+```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [SETUP.md](SETUP.md) | Complete setup and deployment guide |
+| [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | PostgreSQL configuration |
+| [docs/KEYCLOAK_SETUP.md](docs/KEYCLOAK_SETUP.md) | Keycloak SSO configuration |
+
+---
+
+## React + TypeScript + Vite
+
+This project uses Vite with React and TypeScript for the frontend.
+
+### Vite Plugins
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) - Babel for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) - SWC for Fast Refresh
+
+### React Compiler
+
+The React Compiler is enabled. See [React Compiler docs](https://react.dev/learn/react-compiler) for more information.
+
+> **Note:** This may impact Vite dev & build performance.
+
+### ESLint Configuration
+
+For production applications, enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      tseslint.configs.recommendedTypeChecked,
+      tseslint.configs.strictTypeChecked,
+      tseslint.configs.stylisticTypeChecked,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+])
+```
+
+For React-specific lint rules, install:
+- [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x)
+- [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom)
 
 ---
 
