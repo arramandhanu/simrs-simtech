@@ -14,7 +14,7 @@
 
 services:
   simrs-frontend:
-    image: aryaramandhanu/simrs-simtech-fe:1516cce
+    image: aryaramandhanu/simrs-simtech-fe:66a2482
     container_name: simrs-frontend
     ports:
       - "${FRONTEND_PORT:-4173}:4173"
@@ -43,7 +43,7 @@ services:
         max-file: "3"
 
   simrs-backend:
-    image: aryaramandhanu/simrs-simtech-be:5447613
+    image: aryaramandhanu/simrs-simtech-be:66a2482
     container_name: simrs-backend
     ports:
       - "${BACKEND_PORT:-5000}:5000"

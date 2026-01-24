@@ -1,4 +1,4 @@
-import apiClient from './api';
+import { apiClient } from './apiClient';
 
 export interface UserSettings {
     theme: 'light' | 'dark';

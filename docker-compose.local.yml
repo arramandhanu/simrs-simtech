@@ -15,7 +15,7 @@
 services:
   simrs-frontend:
     # IMAGE_TAG set by build.sh (e.g. IMAGE_TAG=abc1234 docker compose up)
-    image: aryaramandhanu/simrs-simtech-fe:1516cce
+    image: aryaramandhanu/simrs-simtech-fe:66a2482
     container_name: simrs-frontend
     ports:
       - "${FRONTEND_PORT:-4173}:4173"
@@ -41,7 +41,7 @@ services:
         max-file: "3"
 
   simrs-backend:
-    image: aryaramandhanu/simrs-simtech-be:5447613
+    image: aryaramandhanu/simrs-simtech-be:66a2482
     container_name: simrs-backend
     ports:
       - "${BACKEND_PORT:-5001}:${PORT:-5001}"
