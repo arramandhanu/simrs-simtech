@@ -91,8 +91,12 @@ const UsersPage = () => {
             // Handle both wrapped and direct response
             if (res && res.success && res.data) {
                 setPendingCount(res.data.count);
-            } else if (res && typeof res.count === 'number') {
-                setPendingCount(res.count);
+            } else {
+                // Try as unwrapped response
+                const unwrapped = res as unknown as { count?: number };
+                if (unwrapped && typeof unwrapped.count === 'number') {
+                    setPendingCount(unwrapped.count);
+                }
             }
         } catch (err) {
             console.error('Failed to fetch pending count', err);
