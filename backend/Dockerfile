@@ -25,6 +25,9 @@ RUN npm install --only=production
 # Copy source code
 COPY --chown=nodejs:nodejs src ./src
 
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads/str && chown -R nodejs:nodejs /app/uploads
+
 USER nodejs
 
 EXPOSE 5000

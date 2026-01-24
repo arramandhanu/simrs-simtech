@@ -11,6 +11,7 @@
 #   ./build.sh --fe-only    # Build frontend only
 #   ./build.sh --be-only    # Build backend only
 #   ./build.sh --no-cache   # Force fresh build
+#   ./build.sh --local      # Build frontend with localhost API URL
 
 set -euo pipefail
 
@@ -37,8 +38,10 @@ BACKEND_CACHE_REF="${BACKEND_IMAGE}:buildcache"
 GIT_SHA="$(git rev-parse --short=7 HEAD)"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
-# Production API URL
-VITE_API_BASE_URL="${VITE_API_BASE_URL:-https://simrs.ramandhanu.cloud/api}"
+# Production API URL (default)
+VITE_API_BASE_URL_PROD="https://simrs.ramandhanu.cloud/api"
+VITE_API_BASE_URL_LOCAL="http://localhost:5001/api"
+VITE_API_BASE_URL="${VITE_API_BASE_URL:-${VITE_API_BASE_URL_PROD}}"
 
 # DockerHub
 DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME:-aryaramandhanu}"
@@ -59,6 +62,7 @@ TAG_LATEST=false
 BUILD_FRONTEND=true
 BUILD_BACKEND=true
 NO_CACHE=false
+LOCAL_BUILD=false
 
 for arg in "$@"; do
     case $arg in
@@ -67,8 +71,15 @@ for arg in "$@"; do
         --fe-only) BUILD_BACKEND=false ;;
         --be-only) BUILD_FRONTEND=false ;;
         --no-cache) NO_CACHE=true ;;
+        --local) LOCAL_BUILD=true ;;
     esac
 done
+
+# Override API URL for local builds
+if [ "$LOCAL_BUILD" = true ]; then
+    VITE_API_BASE_URL="${VITE_API_BASE_URL_LOCAL}"
+    echo -e "${YELLOW}[LOCAL MODE] Using localhost API URL${NC}"
+fi
 
 # =========================
 # Header

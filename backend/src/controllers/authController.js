@@ -27,6 +27,7 @@ const formatUserResponse = (user, token) => ({
       email: user.email,
       role: user.role,
       position: user.position,
+      status: user.status,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=0ea5e9&color=fff`
     }
   }
@@ -49,10 +50,29 @@ exports.login = async (req, res) => {
     }
 
     const user = rows[0];
+
+    // Check if user has a password (Keycloak users don't)
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please use SSO login for this account'
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Check approval status
+    if (user.status !== 'approved') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is pending approval',
+        requiresApproval: true,
+        status: user.status
+      });
     }
 
     const token = generateToken(user);
@@ -77,11 +97,15 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     await db.query(
-      'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)',
-      [email, hashedPassword, name || email.split('@')[0], 'user']
+      'INSERT INTO users (email, password, name, role, status) VALUES ($1, $2, $3, $4, $5)',
+      [email, hashedPassword, name || email.split('@')[0], 'user', 'pending']
     );
 
-    res.status(201).json({ success: true, message: 'User created' });
+    res.status(201).json({
+      success: true,
+      message: 'Registration submitted. Please wait for admin approval.',
+      requiresApproval: true
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -145,37 +169,63 @@ exports.keycloakCallback = async (req, res) => {
 
     const userInfo = await userInfoResponse.json();
 
-    // Decode access token to get groups/roles
+    // Decode access token to get groups/roles and keycloak user id
     const accessTokenPayload = JSON.parse(
       Buffer.from(tokenData.access_token.split('.')[1], 'base64').toString()
     );
+
+    // Keycloak user ID (sub claim)
+    const keycloakId = accessTokenPayload.sub;
 
     // Extract groups from token (Keycloak puts them in 'groups' claim)
     const groups = accessTokenPayload.groups || [];
     const mappedRole = mapKeycloakGroupToRole(groups);
 
-    console.log(`[SSO] User ${userInfo.email} - Groups: ${groups.join(', ')} -> Role: ${mappedRole}`);
+    console.log(`[SSO] User ${userInfo.email} - Keycloak ID: ${keycloakId} - Groups: ${groups.join(', ')} -> Role: ${mappedRole}`);
 
-    // Find or create user in database
-    let { rows } = await db.query('SELECT * FROM users WHERE email = $1', [userInfo.email]);
+    // Find user in database by email or keycloak_id
+    let { rows } = await db.query(
+      'SELECT * FROM users WHERE email = $1 OR keycloak_id = $2',
+      [userInfo.email, keycloakId]
+    );
 
     let user;
+    let isNewUser = false;
+
     if (rows.length === 0) {
-      // Create new user from Keycloak with mapped role
+      // Create new user from Keycloak - pending approval
       const result = await db.query(
-        'INSERT INTO users (email, name, role, password) VALUES ($1, $2, $3, $4) RETURNING *',
-        [userInfo.email, userInfo.name || userInfo.preferred_username, mappedRole, 'keycloak_sso']
+        `INSERT INTO users (email, name, role, keycloak_id, status, password) 
+         VALUES ($1, $2, $3, $4, $5, NULL) RETURNING *`,
+        [userInfo.email, userInfo.name || userInfo.preferred_username, 'user', keycloakId, 'pending']
       );
       user = result.rows[0];
-      console.log(`[SSO] Created new user: ${user.email} with role: ${user.role}`);
+      isNewUser = true;
+      console.log(`[SSO] Created new pending user: ${user.email}`);
     } else {
       user = rows[0];
-      // Update role if it changed in Keycloak (optional - sync role on each login)
-      if (user.role !== mappedRole && mappedRole !== 'user') {
-        await db.query('UPDATE users SET role = $1 WHERE id = $2', [mappedRole, user.id]);
-        user.role = mappedRole;
-        console.log(`[SSO] Updated user ${user.email} role to: ${mappedRole}`);
+
+      // Update keycloak_id if not set (for existing users)
+      if (!user.keycloak_id) {
+        await db.query('UPDATE users SET keycloak_id = $1 WHERE id = $2', [keycloakId, user.id]);
+        user.keycloak_id = keycloakId;
       }
+
+      // Update name if changed
+      if (userInfo.name && user.name !== userInfo.name) {
+        await db.query('UPDATE users SET name = $1 WHERE id = $2', [userInfo.name, user.id]);
+        user.name = userInfo.name;
+      }
+    }
+
+    // Check approval status
+    if (user.status !== 'approved') {
+      console.log(`[SSO] User ${user.email} requires approval (status: ${user.status})`);
+      return res.redirect(
+        `${keycloakConfig.frontendUrl}/login?` +
+        `requires_approval=true&status=${user.status}&email=${encodeURIComponent(user.email)}` +
+        (isNewUser ? '&new_user=true' : '')
+      );
     }
 
     user.authProvider = 'keycloak';
@@ -186,7 +236,8 @@ exports.keycloakCallback = async (req, res) => {
       id: user.id.toString(),
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      status: user.status
     }))}`);
 
   } catch (error) {

@@ -13,8 +13,10 @@ import {
   ListOrdered,
   Pill,
   Settings,
+  UsersRound,
 } from "lucide-react";
 import logo from "../../assets/logo/logo.png";
+import { useRole } from "../auth/RoleGuard";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -36,18 +38,16 @@ const SidebarItem = ({
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
-        isActive
-          ? "bg-medical-50 text-medical-600 font-medium"
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+      `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive
+        ? "bg-medical-50 text-medical-600 font-medium"
+        : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
       }`
     }
   >
     <Icon size={22} className="min-w-[22px]" />
     <span
-      className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
-        collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-      }`}
+      className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+        }`}
     >
       {label}
     </span>
@@ -63,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setMobileMenuOpen,
 }) => {
   const navigate = useNavigate();
+  const { isAdmin } = useRole();
 
   const handleLogout = () => {
     navigate("/login");
@@ -79,15 +80,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { to: "/antrian", icon: ListOrdered, label: "Antrian" },
     { to: "/farmasi", icon: Pill, label: "Farmasi" },
     { to: "/settings", icon: Settings, label: "Settings" },
+    // Admin only
+    ...(isAdmin ? [{ to: "/users", icon: UsersRound, label: "Users" }] : []),
   ];
 
   return (
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 transition-all duration-300 z-20 ${
-          sidebarOpen ? "w-64" : "w-20"
-        }`}
+        className={`hidden md:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 transition-all duration-300 z-20 ${sidebarOpen ? "w-64" : "w-20"
+          }`}
       >
         <div className="h-20 flex items-center px-4 border-b border-slate-100">
           <div className="flex items-center gap-3 text-medical-600 overflow-hidden">
@@ -99,9 +101,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             </div>
             <span
-              className={`font-bold text-xl tracking-tight text-slate-800 transition-opacity duration-300 ${
-                sidebarOpen ? "opacity-100" : "opacity-0"
-              }`}
+              className={`font-bold text-xl tracking-tight text-slate-800 transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0"
+                }`}
             >
               SIMRS
             </span>
@@ -117,15 +118,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-3 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors ${
-              !sidebarOpen && "justify-center"
-            }`}
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors ${!sidebarOpen && "justify-center"
+              }`}
           >
             <LogOut size={22} />
             <span
-              className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                !sidebarOpen ? "w-0 opacity-0" : "w-auto opacity-100"
-              }`}
+              className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${!sidebarOpen ? "w-0 opacity-0" : "w-auto opacity-100"
+                }`}
             >
               Logout
             </span>
@@ -142,9 +141,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 bg-white w-64 z-50 transform transition-transform duration-300 md:hidden ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 bg-white w-64 z-50 transform transition-transform duration-300 md:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100">
           <span className="font-bold text-xl text-slate-800 flex items-center gap-2">
