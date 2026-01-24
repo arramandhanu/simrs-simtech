@@ -2,14 +2,32 @@ const db = require('../config/database');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 
+// Import Keycloak Admin Service for role sync
+let keycloakAdminService;
+try {
+    keycloakAdminService = require('../services/keycloakAdminService');
+} catch (e) {
+    console.log('Keycloak Admin Service not available, role sync disabled');
+}
+
 /**
  * Get all users (admin only)
  */
 exports.getAllUsers = async (req, res) => {
     try {
-        const { rows } = await db.query(
-            'SELECT id, name, email, role, position, created_at FROM users ORDER BY created_at DESC'
-        );
+        const { status } = req.query;
+
+        let query = 'SELECT id, name, email, role, position, status, keycloak_id, approved_at, created_at FROM users';
+        const params = [];
+
+        if (status) {
+            query += ' WHERE status = $1';
+            params.push(status);
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        const { rows } = await db.query(query, params);
 
         const users = rows.map(u => ({
             id: u.id.toString(),
@@ -17,6 +35,9 @@ exports.getAllUsers = async (req, res) => {
             email: u.email,
             role: u.role,
             position: u.position,
+            status: u.status,
+            keycloakId: u.keycloak_id,
+            approvedAt: u.approved_at,
             createdAt: u.created_at
         }));
 
@@ -28,12 +49,25 @@ exports.getAllUsers = async (req, res) => {
 };
 
 /**
+ * Get pending users count
+ */
+exports.getPendingCount = async (req, res) => {
+    try {
+        const { rows } = await db.query("SELECT COUNT(*) as count FROM users WHERE status = 'pending'");
+        res.json({ success: true, data: { count: parseInt(rows[0].count) } });
+    } catch (error) {
+        console.error('Error fetching pending count:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+/**
  * Get user by ID
  */
 exports.getUserById = async (req, res) => {
     try {
         const { rows } = await db.query(
-            'SELECT id, name, email, role, position, created_at FROM users WHERE id = $1',
+            'SELECT id, name, email, role, position, status, keycloak_id, approved_at, created_at FROM users WHERE id = $1',
             [req.params.id]
         );
 
@@ -50,6 +84,9 @@ exports.getUserById = async (req, res) => {
                 email: u.email,
                 role: u.role,
                 position: u.position,
+                status: u.status,
+                keycloakId: u.keycloak_id,
+                approvedAt: u.approved_at,
                 createdAt: u.created_at
             }
         });
@@ -77,14 +114,19 @@ exports.createUser = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email already registered' });
         }
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        // Hash password if provided
+        let hashedPassword = null;
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(password, salt);
+        }
 
-        // Insert user
+        // Admin-created users are automatically approved
         const result = await db.query(
-            'INSERT INTO users (email, password, name, role, position) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, position, created_at',
-            [email, hashedPassword, name || email.split('@')[0], role || 'user', position || null]
+            `INSERT INTO users (email, password, name, role, position, status, approved_at, approved_by) 
+             VALUES ($1, $2, $3, $4, $5, 'approved', NOW(), $6) 
+             RETURNING id, name, email, role, position, status, created_at`,
+            [email, hashedPassword, name || email.split('@')[0], role || 'user', position || null, req.user.id]
         );
 
         const u = result.rows[0];
@@ -97,11 +139,101 @@ exports.createUser = async (req, res) => {
                 email: u.email,
                 role: u.role,
                 position: u.position,
+                status: u.status,
                 createdAt: u.created_at
             }
         });
     } catch (error) {
         console.error('Error creating user:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+/**
+ * Approve user (admin only)
+ */
+exports.approveUser = async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body; // Optional role to assign on approval
+
+    try {
+        const { rows } = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const user = rows[0];
+
+        if (user.status === 'approved') {
+            return res.status(400).json({ success: false, message: 'User is already approved' });
+        }
+
+        const newRole = role || user.role || 'user';
+
+        // Update user status to approved
+        const result = await db.query(
+            `UPDATE users SET status = 'approved', role = $1, approved_at = NOW(), approved_by = $2 
+             WHERE id = $3 
+             RETURNING id, name, email, role, position, status, keycloak_id, approved_at`,
+            [newRole, req.user.id, id]
+        );
+
+        const approvedUser = result.rows[0];
+
+        // Sync role to Keycloak if user has keycloak_id
+        if (approvedUser.keycloak_id && keycloakAdminService) {
+            try {
+                await keycloakAdminService.syncUserRole(approvedUser.keycloak_id, newRole);
+            } catch (syncError) {
+                console.error('Keycloak role sync failed:', syncError.message);
+                // Don't fail the approval, just log the error
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'User approved successfully',
+            data: {
+                id: approvedUser.id.toString(),
+                name: approvedUser.name,
+                email: approvedUser.email,
+                role: approvedUser.role,
+                status: approvedUser.status,
+                approvedAt: approvedUser.approved_at
+            }
+        });
+    } catch (error) {
+        console.error('Error approving user:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+/**
+ * Reject user (admin only)
+ */
+exports.rejectUser = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const { rows } = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const result = await db.query(
+            `UPDATE users SET status = 'rejected' WHERE id = $1 RETURNING id, email, status`,
+            [id]
+        );
+
+        res.json({
+            success: true,
+            message: 'User rejected',
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error rejecting user:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -120,10 +252,13 @@ exports.updateUser = async (req, res) => {
 
     try {
         // Check if user exists
-        const existing = await db.query('SELECT id FROM users WHERE id = $1', [id]);
+        const existing = await db.query('SELECT * FROM users WHERE id = $1', [id]);
         if (existing.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
+
+        const currentUser = existing.rows[0];
+        const previousRole = currentUser.role;
 
         // Check if email is taken by another user
         if (email) {
@@ -167,11 +302,24 @@ exports.updateUser = async (req, res) => {
 
         values.push(id);
         const result = await db.query(
-            `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING id, name, email, role, position, created_at`,
+            `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount} 
+             RETURNING id, name, email, role, position, status, keycloak_id, created_at`,
             values
         );
 
         const u = result.rows[0];
+
+        // Sync role to Keycloak if role changed and user has keycloak_id
+        if (role !== undefined && role !== previousRole && u.keycloak_id && keycloakAdminService) {
+            try {
+                await keycloakAdminService.syncUserRole(u.keycloak_id, role);
+                console.log(`Synced role '${role}' to Keycloak for user ${u.email}`);
+            } catch (syncError) {
+                console.error('Keycloak role sync failed:', syncError.message);
+                // Don't fail the update, just log the error
+            }
+        }
+
         res.json({
             success: true,
             message: 'User updated successfully',
@@ -181,6 +329,7 @@ exports.updateUser = async (req, res) => {
                 email: u.email,
                 role: u.role,
                 position: u.position,
+                status: u.status,
                 createdAt: u.created_at
             }
         });
@@ -191,7 +340,7 @@ exports.updateUser = async (req, res) => {
 };
 
 /**
- * Delete user (admin only) - soft delete by setting role to 'inactive'
+ * Delete user (admin only)
  */
 exports.deleteUser = async (req, res) => {
     const { id } = req.params;
@@ -228,4 +377,17 @@ exports.getRoles = (req, res) => {
         { value: 'user', label: 'User' }
     ];
     res.json({ success: true, data: roles });
+};
+
+/**
+ * Get user statuses
+ */
+exports.getStatuses = (req, res) => {
+    const statuses = [
+        { value: 'pending', label: 'Pending Approval' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'suspended', label: 'Suspended' }
+    ];
+    res.json({ success: true, data: statuses });
 };

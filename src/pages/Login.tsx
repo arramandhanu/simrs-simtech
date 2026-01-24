@@ -24,12 +24,32 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [keycloakEnabled, setKeycloakEnabled] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState<{
+    show: boolean;
+    email?: string;
+    status?: string;
+    isNew?: boolean;
+  }>({ show: false });
 
-  // Check for SSO error from callback
+  // Check for SSO error or pending approval from callback
   useEffect(() => {
     const errorParam = searchParams.get("error");
+    const requiresApproval = searchParams.get("requires_approval");
+    const statusParam = searchParams.get("status");
+    const emailParam = searchParams.get("email");
+    const isNewUser = searchParams.get("new_user");
+
     if (errorParam) {
       setError(`SSO login failed: ${errorParam}`);
+    }
+
+    if (requiresApproval === "true") {
+      setPendingApproval({
+        show: true,
+        email: emailParam || undefined,
+        status: statusParam || "pending",
+        isNew: isNewUser === "true"
+      });
     }
   }, [searchParams]);
 
@@ -115,6 +135,31 @@ const LoginPage = () => {
             {error && (
               <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
                 {error}
+              </div>
+            )}
+
+            {pendingApproval.show && (
+              <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Activity className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-800">
+                      {pendingApproval.isNew ? "Account Created!" : "Awaiting Approval"}
+                    </h3>
+                    <p className="text-sm text-amber-700 mt-1">
+                      {pendingApproval.isNew
+                        ? "Your account has been created and is pending administrator approval. You'll be able to log in once approved."
+                        : "Your account is pending approval from an administrator. Please check back later."}
+                    </p>
+                    {pendingApproval.email && (
+                      <p className="text-xs text-amber-600 mt-2">
+                        Email: {pendingApproval.email}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

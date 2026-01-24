@@ -9,10 +9,15 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
     role VARCHAR(50) DEFAULT 'user',
     position VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    keycloak_id VARCHAR(255) UNIQUE,
+    status VARCHAR(50) DEFAULT 'pending',
+    approved_at TIMESTAMP,
+    approved_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_approved_by FOREIGN KEY (approved_by) REFERENCES users(id)
 );
 
 -- Patients table
