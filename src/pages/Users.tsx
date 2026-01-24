@@ -46,19 +46,36 @@ const UsersPage = () => {
                 userService.getRoles()
             ]);
 
-            console.log('[Users] Raw usersRes:', JSON.stringify(usersRes, null, 2));
-            console.log('[Users] usersRes.success:', usersRes.success);
-            console.log('[Users] usersRes.data:', usersRes.data);
-            console.log('[Users] usersRes.data type:', typeof usersRes.data);
-            console.log('[Users] usersRes.data length:', usersRes.data?.length);
+            console.log('[Users] Raw usersRes:', usersRes);
 
-            if (usersRes.success) {
-                console.log('[Users] SUCCESS! Setting', usersRes.data.length, 'users');
-                setUsers(usersRes.data);
-            } else {
-                console.log('[Users] usersRes.success was FALSY:', usersRes.success);
+            // Handle both wrapped {success, data} and direct array responses
+            let usersData: User[] = [];
+            if (Array.isArray(usersRes)) {
+                // Response is already the array
+                usersData = usersRes;
+                console.log('[Users] Response was array, length:', usersData.length);
+            } else if (usersRes && usersRes.success && usersRes.data) {
+                // Response is wrapped
+                usersData = usersRes.data;
+                console.log('[Users] Response was wrapped, length:', usersData.length);
+            } else if (usersRes && usersRes.data && Array.isArray(usersRes.data)) {
+                // Response has data but no success flag
+                usersData = usersRes.data;
+                console.log('[Users] Response had data array, length:', usersData.length);
             }
-            if (rolesRes.success) setRoles(rolesRes.data);
+
+            console.log('[Users] Setting users:', usersData.length);
+            setUsers(usersData);
+
+            // Handle roles similarly
+            let rolesData: Role[] = [];
+            if (Array.isArray(rolesRes)) {
+                rolesData = rolesRes;
+            } else if (rolesRes && rolesRes.data) {
+                rolesData = rolesRes.data;
+            }
+            setRoles(rolesData);
+
         } catch (err) {
             console.error('[Users] CATCH ERROR:', err);
             setError('Failed to load users. You may not have permission.');
@@ -71,7 +88,12 @@ const UsersPage = () => {
     const fetchPendingCount = async () => {
         try {
             const res = await userService.getPendingCount();
-            if (res.success) setPendingCount(res.data.count);
+            // Handle both wrapped and direct response
+            if (res && res.success && res.data) {
+                setPendingCount(res.data.count);
+            } else if (res && typeof res.count === 'number') {
+                setPendingCount(res.count);
+            }
         } catch (err) {
             console.error('Failed to fetch pending count', err);
         }
