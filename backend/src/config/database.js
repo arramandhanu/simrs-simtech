@@ -3,6 +3,12 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// Determine SSL configuration
+// Use SSL for production/cloud databases, disable for local PostgreSQL
+const sslConfig = process.env.DB_SSL === 'true' 
+  ? { rejectUnauthorized: false }
+  : false;
+
 // Support both connection string (DATABASE_URL) and individual params
 const pool = process.env.DATABASE_URL
   ? new Pool({
@@ -15,7 +21,7 @@ const pool = process.env.DATABASE_URL
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       port: process.env.DB_PORT || 5432,
-      ssl: { rejectUnauthorized: false }
+      ssl: sslConfig
     });
 
 // Test connection
@@ -29,4 +35,3 @@ pool.connect()
   });
 
 module.exports = pool;
-

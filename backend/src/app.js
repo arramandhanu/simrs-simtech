@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const morgan = require('morgan');
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ const PORT = process.env.PORT || 5000;
 
 // Import middleware
 const authMiddleware = require('./middleware/authMiddleware');
+const { requireRole, ROLES } = require('./middleware/authMiddleware');
 
 // CORS Configuration - Restrict to frontend origin only
 const corsOptions = {
@@ -22,6 +24,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Request logging
+const logFormat = process.env.NODE_ENV === 'production'
+  ? ':remote-addr - :method :url :status :response-time ms'
+  : 'dev';
+app.use(morgan(logFormat));
+
+// Custom request logger
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  next();
+});
+
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'SIMRS Backend is running' });
@@ -30,10 +45,17 @@ app.get('/api/health', (req, res) => {
 // Public routes (no auth required)
 app.use('/api/auth', require('./routes/authRoutes'));
 
-// Protected routes (auth required)
+// Protected routes (auth required for all, role-specific permissions in route handlers)
+// All users can access dashboard
 app.use('/api/dashboard', authMiddleware, require('./routes/dashboardRoutes'));
+
+// Patients: All authenticated users can view, only staff+ can modify
 app.use('/api/patients', authMiddleware, require('./routes/patientRoutes'));
+
+// Doctors: Admin/Staff can manage, Doctors can view
 app.use('/api/doctors', authMiddleware, require('./routes/doctorRoutes'));
+
+// Spesialis: All authenticated users can view
 app.use('/api/spesialis', authMiddleware, require('./routes/spesialisRoutes'));
 app.use('/api/kredensial', authMiddleware, require('./routes/kredensialRoutes'));
 
