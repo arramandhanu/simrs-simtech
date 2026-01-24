@@ -259,6 +259,11 @@ const UsersPage = () => {
             </div>
 
             {/* Users Table */}
+            {/* DEBUG: Remove after fixing */}
+            <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 text-sm rounded">
+                DEBUG: loading={loading.toString()}, users.length={users.length}, activeTab={activeTab}
+            </div>
+
             {loading ? (
                 <div className="text-center py-12">
                     <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
