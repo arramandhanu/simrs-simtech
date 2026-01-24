@@ -14,8 +14,15 @@ const registerValidation = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ];
 
+// Database auth routes
 router.post('/login', loginValidation, authController.login);
 router.post('/register', registerValidation, authController.register);
 
-module.exports = router;
+// Keycloak SSO routes
+router.get('/keycloak', authController.keycloakLogin);
+router.get('/keycloak/callback', authController.keycloakCallback);
 
+// Auth config (returns available auth methods)
+router.get('/config', authController.getAuthConfig);
+
+module.exports = router;

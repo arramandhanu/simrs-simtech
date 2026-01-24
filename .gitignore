@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 backend/package-lock.json
 backend/.env
+.env
+.env.local
+.env.production
+.env.*.local
+
+docs/DATABASE_SETUP.md
+docs/KEYCLOAK_SETUP.md
+nginx/

@@ -15,6 +15,7 @@ import { DoctorDetail } from "./DoctorDetail";
 import { DoctorForm, type DoctorFormData } from "./DoctorForm";
 import { PlaceholderTab } from "./PlaceholderTab";
 import { SpesialisasiTab } from "./SpesialisasiTab";
+import { KredensialTab } from "./KredensialTab";
 import type { Doctor } from "../../../types/doctor";
 
 const DOCTOR_TABS = [
@@ -65,12 +66,7 @@ export const DoctorModal = ({
       case "spesialisasi":
         return <SpesialisasiTab dokterId={doctor.id} />;
       case "kredensial":
-        return (
-          <PlaceholderTab
-            title="Kredensial STR & SIP"
-            description="Manage STR and SIP credentials with expiry tracking."
-          />
-        );
+        return <KredensialTab dokterId={doctor.id} />;
       case "penugasan":
         return (
           <PlaceholderTab
