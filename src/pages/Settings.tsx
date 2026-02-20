@@ -209,18 +209,18 @@ export const SettingsPage = () => {
             )}
 
             {/* Tabs */}
-            <div className="border-b border-slate-200 mb-6">
-                <div className="flex gap-6">
+            <div className="border-b border-slate-200 mb-6 overflow-x-auto">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 min-w-0">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`pb-3 px-1 border-b-2 font-medium transition flex items-center gap-2 ${activeTab === tab.id
+                            className={`pb-3 px-1 border-b-2 font-medium transition flex items-center gap-2 whitespace-nowrap text-sm ${activeTab === tab.id
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-slate-500 hover:text-slate-700'
                                 }`}
                         >
-                            <tab.icon size={18} />
+                            <tab.icon size={16} />
                             {tab.label}
                         </button>
                     ))}

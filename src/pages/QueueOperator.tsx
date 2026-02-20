@@ -77,6 +77,7 @@ const QueueOperator = () => {
     const [counters, setCounters] = useState<Counter[]>([]);
     const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>();
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [actionLoading, setActionLoading] = useState<number | null>(null);
 
     // Registration form state
@@ -111,9 +112,13 @@ const QueueOperator = () => {
         }
     };
 
-    const refreshData = () => {
-        fetchQueue();
-        fetchStats();
+    const refreshData = async () => {
+        setRefreshing(true);
+        try {
+            await Promise.all([fetchQueue(), fetchStats()]);
+        } finally {
+            setRefreshing(false);
+        }
     };
 
     // Initial load
@@ -311,10 +316,11 @@ const QueueOperator = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={refreshData}
-                        className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        disabled={refreshing}
+                        className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
                     >
-                        <RefreshCw size={16} />
-                        Refresh
+                        <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+                        {refreshing ? 'Memuat...' : 'Refresh'}
                     </button>
                     <button
                         onClick={() => setShowRegisterForm(true)}
@@ -332,7 +338,7 @@ const QueueOperator = () => {
                     <StatCard label="Menunggu" value={stats.total_waiting} color="text-blue-600" bg="bg-blue-50" />
                     <StatCard label="Dipanggil" value={stats.total_called} color="text-yellow-600" bg="bg-yellow-50" />
                     <StatCard label="Selesai" value={stats.total_served} color="text-green-600" bg="bg-green-50" />
-                    <StatCard label="Rata-rata Tunggu" value={`${stats.avg_wait_minutes} mnt`} color="text-slate-600" bg="bg-slate-50" />
+                    <StatCard label="Rata-rata Tunggu" value={stats.avg_wait_minutes > 0 ? `${stats.avg_wait_minutes} mnt` : '—'} color="text-slate-600" bg="bg-slate-50" />
                 </div>
             )}
 
