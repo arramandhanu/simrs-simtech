@@ -6,6 +6,8 @@ import Dashboard from "./pages/Dashboard";
 import Doctors from "./pages/Doctors";
 import UsersPage from "./pages/Users";
 import SettingsPage from "./pages/Settings";
+import QueueOperator from "./pages/QueueOperator";
+import QueueDisplay from "./pages/QueueDisplay";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import { AuthProvider } from "./context/AuthContext";
@@ -17,11 +19,14 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+
+          {/* Standalone fullscreen display (no sidebar, no auth) */}
+          <Route path="/antrian/display" element={<QueueDisplay />} />
+
           {/* Protected Dashboard Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
-              {/* Add other routes here as we build them */}
               <Route path="dokter" element={<Doctors />} />
               <Route
                 path="paramedis"
@@ -53,10 +58,7 @@ function App() {
                   </div>
                 }
               />
-              <Route
-                path="antrian"
-                element={<div className="p-8">Antrian Page (Coming Soon)</div>}
-              />
+              <Route path="antrian" element={<QueueOperator />} />
               <Route
                 path="farmasi"
                 element={<div className="p-8">Farmasi Page (Coming Soon)</div>}
@@ -77,3 +79,4 @@ function App() {
 }
 
 export default App;
+
