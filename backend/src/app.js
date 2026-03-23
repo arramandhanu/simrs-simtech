@@ -69,8 +69,14 @@ app.use('/api/settings', require('./routes/settingsRoutes'));
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Start Server
-app.listen(PORT, () => {
+// Start Server with WebSocket support
+const http = require('http');
+const { createWebSocketServer } = require('./services/websocketService');
+
+const server = http.createServer(app);
+createWebSocketServer(server);
+
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 

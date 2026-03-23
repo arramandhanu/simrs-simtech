@@ -76,11 +76,6 @@ export const userService = {
         return response.data;
     },
 
-    async suspendUser(id: string): Promise<ApiResponse<User>> {
-        const response = await apiClient.post<ApiResponse<User>>(`/users/${id}/suspend`, {});
-        return response.data;
-    },
-
     async updateUser(id: string, data: UpdateUserData): Promise<ApiResponse<User>> {
         const response = await apiClient.put<ApiResponse<User>>(`/users/${id}`, data);
         return response.data;

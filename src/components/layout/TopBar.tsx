@@ -93,8 +93,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       await userService.approveUser(userId);
       setPendingUsers((prev: PendingUser[]) => prev.filter((u: PendingUser) => u.id !== userId));
       setPendingCount((prev: number) => Math.max(0, prev - 1));
-      // Notify Users page to refresh its list
-      window.dispatchEvent(new Event('user:approved'));
     } catch (err) {
       console.error("Failed to approve user", err);
     } finally {
@@ -148,6 +146,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
                 {pendingCount > 9 ? "9+" : pendingCount}
               </span>
+            )}
+            {pendingCount === 0 && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-slate-300 rounded-full border-2 border-white"></span>
             )}
           </button>
 

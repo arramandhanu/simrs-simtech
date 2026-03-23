@@ -48,9 +48,6 @@ router.post('/:id/approve', userController.approveUser);
 // POST /api/users/:id/reject - Reject pending user
 router.post('/:id/reject', userController.rejectUser);
 
-// POST /api/users/:id/suspend - Suspend approved user
-router.post('/:id/suspend', userController.suspendUser);
-
 // PUT /api/users/:id - Update user
 router.put('/:id', updateUserValidation, userController.updateUser);
 
