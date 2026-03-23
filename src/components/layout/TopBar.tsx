@@ -121,13 +121,15 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Menu size={24} />
         </button>
 
-        {/* Search */}
+        {/* Search — TODO: wire to global search context */}
         <div className="hidden md:flex items-center bg-slate-100 rounded-xl px-4 py-2.5 w-64 focus-within:w-80 focus-within:bg-white focus-within:ring-2 focus-within:ring-medical-100 transition-all duration-300">
           <Search size={20} className="text-slate-400 mr-3" />
           <input
             type="text"
             placeholder="Search patients, doctors..."
             className="bg-transparent border-none outline-none text-sm w-full text-slate-600 placeholder-slate-400"
+            readOnly
+            title="Global search — coming soon"
           />
         </div>
       </div>

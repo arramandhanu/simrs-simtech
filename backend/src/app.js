@@ -65,20 +65,6 @@ app.use('/api/users', authMiddleware, require('./routes/userRoutes'));
 // Settings: All authenticated users (role check inside for hospital settings)
 app.use('/api/settings', require('./routes/settingsRoutes'));
 
-// Queue Management
-app.use('/api/departments', authMiddleware, require('./routes/departmentRoutes'));
-app.use('/api/counters', authMiddleware, require('./routes/counterRoutes'));
-app.use('/api/queue', authMiddleware, require('./routes/queueRoutes'));
-app.use('/api/tts', authMiddleware, require('./routes/ttsRoutes'));
-
-// Public display board endpoint (no auth, used by TV screens)
-const queueController = require('./controllers/queueController');
-app.get('/api/public/queue/display', queueController.getDisplayBoard);
-
-// Public department list (for TV display department filter)
-const departmentController = require('./controllers/departmentController');
-app.get('/api/public/departments', departmentController.getAll);
-
 // Static file serving for uploads
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
