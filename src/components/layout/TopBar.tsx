@@ -93,6 +93,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       await userService.approveUser(userId);
       setPendingUsers((prev: PendingUser[]) => prev.filter((u: PendingUser) => u.id !== userId));
       setPendingCount((prev: number) => Math.max(0, prev - 1));
+      // Notify Users page to refresh its list
+      window.dispatchEvent(new Event('user:approved'));
     } catch (err) {
       console.error("Failed to approve user", err);
     } finally {
@@ -121,13 +123,15 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Menu size={24} />
         </button>
 
-        {/* Search */}
+        {/* Search — TODO: wire to global search context */}
         <div className="hidden md:flex items-center bg-slate-100 rounded-xl px-4 py-2.5 w-64 focus-within:w-80 focus-within:bg-white focus-within:ring-2 focus-within:ring-medical-100 transition-all duration-300">
           <Search size={20} className="text-slate-400 mr-3" />
           <input
             type="text"
             placeholder="Search patients, doctors..."
             className="bg-transparent border-none outline-none text-sm w-full text-slate-600 placeholder-slate-400"
+            readOnly
+            title="Global search — coming soon"
           />
         </div>
       </div>
@@ -144,9 +148,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
                 {pendingCount > 9 ? "9+" : pendingCount}
               </span>
-            )}
-            {pendingCount === 0 && (
-              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-slate-300 rounded-full border-2 border-white"></span>
             )}
           </button>
 

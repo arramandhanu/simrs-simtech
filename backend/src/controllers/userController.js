@@ -365,6 +365,39 @@ exports.deleteUser = async (req, res) => {
 };
 
 /**
+ * Suspend user (admin only)
+ */
+exports.suspendUser = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const { rows } = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Prevent suspending yourself
+        if (req.user.id.toString() === id) {
+            return res.status(400).json({ success: false, message: 'Cannot suspend your own account' });
+        }
+
+        const result = await db.query(
+            `UPDATE users SET status = 'suspended' WHERE id = $1 RETURNING id, email, name, status`,
+            [id]
+        );
+
+        res.json({
+            success: true,
+            message: 'User suspended',
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error suspending user:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+/**
  * Get available roles
  */
 exports.getRoles = (req, res) => {

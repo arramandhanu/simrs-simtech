@@ -17,28 +17,54 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  refreshUser: (newUser: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** Decode a JWT payload and return exp epoch seconds, or null if unreadable. */
+function getTokenExpiry(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Returns true if the token is expired (or unreadable). */
+function isTokenExpired(token: string): boolean {
+  const exp = getTokenExpiry(token);
+  if (exp === null) return false; // Can't determine — assume valid
+  return Math.floor(Date.now() / 1000) >= exp;
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize from localStorage on mount
+  // Initialize from localStorage on mount — validate token first
   useEffect(() => {
     const storedToken = localStorage.getItem(TOKEN_KEY);
     const storedUser = localStorage.getItem(USER_KEY);
 
     if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
+      if (isTokenExpired(storedToken)) {
+        // Token expired — force logout
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+      } else {
+        try {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error("Failed to parse stored user:", error);
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+        }
       }
     }
     setIsLoading(false);
@@ -58,6 +84,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
+  const refreshUser = (newUser: User) => {
+    localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+    setUser(newUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -67,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         logout,
+        refreshUser,
       }}
     >
       {children}
