@@ -517,32 +517,43 @@ const QueueOperator = () => {
                                                     </div>
                                                 )}
 
-                                                {/* Waiting queue preview */}
-                                                {nextWaiting.length > 0 && (
-                                                    <div className="mb-3">
-                                                        <p className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">
-                                                            Antrian Berikutnya ({nextWaiting.length})
-                                                        </p>
-                                                        <div className="space-y-1.5">
-                                                            {nextWaiting.slice(0, 3).map((q, idx) => (
-                                                                <div key={q.id} className={`flex items-center justify-between p-2 rounded-lg ${idx === 0 ? 'bg-white border border-slate-200' : 'bg-white/50'}`}>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-xs font-mono font-bold text-slate-700">{q.queue_number}</span>
-                                                                        <span className="text-xs text-slate-500">{q.patient_name || "Pasien"}</span>
+                                                {/* Waiting queue detail */}
+                                                <div className="mb-3">
+                                                    <p className="text-xs text-slate-500 font-semibold mb-1.5 uppercase">
+                                                        Antrian Menunggu ({nextWaiting.length})
+                                                    </p>
+                                                    {nextWaiting.length === 0 ? (
+                                                        <p className="text-xs text-slate-400 text-center py-2">Belum ada antrian</p>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            {nextWaiting.slice(0, 5).map((q, idx) => (
+                                                                <div key={q.id} className={`p-2.5 rounded-lg ${idx === 0 ? 'bg-white border border-slate-200 shadow-sm' : 'bg-white/60 border border-slate-100'}`}>
+                                                                    <div className="flex items-center justify-between mb-1">
+                                                                        <span className="text-sm font-mono font-bold text-slate-800">{q.queue_number}</span>
+                                                                        <span className={`px-1.5 py-0.5 text-[10px] rounded-full ${PRIORITY_COLORS[q.priority]}`}>
+                                                                            {PRIORITY_LABELS[q.priority]}
+                                                                        </span>
                                                                     </div>
-                                                                    <span className={`px-1.5 py-0.5 text-[10px] rounded-full ${PRIORITY_COLORS[q.priority]}`}>
-                                                                        {PRIORITY_LABELS[q.priority]}
-                                                                    </span>
+                                                                    <div className="space-y-0.5">
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-[10px] text-slate-400 w-16">Nama:</span>
+                                                                            <span className="text-xs text-slate-700">{q.patient_name || "-"}</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-[10px] text-slate-400 w-16">Poli:</span>
+                                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${color.badge}`}>{q.department_name || dept.name}</span>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             ))}
-                                                            {nextWaiting.length > 3 && (
+                                                            {nextWaiting.length > 5 && (
                                                                 <p className="text-[10px] text-slate-400 text-center">
-                                                                    +{nextWaiting.length - 3} pasien lainnya
+                                                                    +{nextWaiting.length - 5} pasien lainnya
                                                                 </p>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
 
                                                 {/* Call next button */}
                                                 <button

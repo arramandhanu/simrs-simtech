@@ -209,8 +209,8 @@ export const SettingsPage = () => {
             )}
 
             {/* Tabs */}
-            <div className="border-b border-slate-200 mb-6 overflow-x-auto">
-                <div className="flex flex-wrap gap-x-4 gap-y-1 min-w-0">
+            <div className="border-b border-slate-200 mb-6 -mx-6 px-6 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex gap-4 min-w-max">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
