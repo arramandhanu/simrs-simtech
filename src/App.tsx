@@ -11,9 +11,11 @@ import QueueDisplay from "./pages/QueueDisplay";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import { AuthProvider } from "./context/AuthContext";
+import { AppearanceProvider } from "./context/AppearanceContext";
 
 function App() {
   return (
+    <AppearanceProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -75,6 +77,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </AppearanceProvider>
   );
 }
 

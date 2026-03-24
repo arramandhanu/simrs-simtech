@@ -230,3 +230,122 @@ exports.updateProfile = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+// ─── SMTP Config ──────────────────────────────────────────────────────────────
+const SMTP_KEYS = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_secure', 'smtp_enabled'];
+
+exports.getSmtpConfig = async (req, res) => {
+    try {
+        const { rows } = await db.query(
+            `SELECT setting_key, setting_value FROM hospital_settings WHERE setting_key = ANY($1)`,
+            [SMTP_KEYS]
+        );
+        const config = {};
+        rows.forEach(r => { config[r.setting_key] = r.setting_value; });
+        // Fill defaults
+        SMTP_KEYS.forEach(k => { if (!(k in config)) config[k] = ''; });
+        config.smtp_enabled = config.smtp_enabled === 'true';
+        config.smtp_secure = config.smtp_secure !== 'false';
+        res.json({ success: true, data: config });
+    } catch (error) {
+        console.error('Error fetching SMTP config:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.updateSmtpConfig = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const updates = req.body;
+        for (const key of SMTP_KEYS) {
+            if (key in updates) {
+                await db.query(
+                    `INSERT INTO hospital_settings (setting_key, setting_value, updated_by, updated_at)
+                     VALUES ($1, $2, $3, NOW())
+                     ON CONFLICT (setting_key) DO UPDATE SET setting_value = $2, updated_by = $3, updated_at = NOW()`,
+                    [key, String(updates[key]), userId]
+                );
+            }
+        }
+        res.json({ success: true, message: 'SMTP configuration saved' });
+    } catch (error) {
+        console.error('Error updating SMTP config:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.testSmtpConfig = async (req, res) => {
+    try {
+        // Attempt to load nodemailer; if not installed, return a helpful error
+        let nodemailer;
+        try { nodemailer = require('nodemailer'); } catch {
+            return res.status(422).json({ success: false, message: 'nodemailer not installed. Run: npm install nodemailer' });
+        }
+        const { smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from, smtp_secure } = req.body;
+        const transporter = nodemailer.createTransport({
+            host: smtp_host,
+            port: Number(smtp_port) || 587,
+            secure: smtp_secure === true || smtp_secure === 'true',
+            auth: { user: smtp_user, pass: smtp_pass },
+        });
+        await transporter.verify();
+        await transporter.sendMail({
+            from: smtp_from,
+            to: req.user.email,
+            subject: 'SIMRS – SMTP Test',
+            text: 'SMTP configuration is working correctly.',
+        });
+        res.json({ success: true, message: `Test email sent to ${req.user.email}` });
+    } catch (error) {
+        res.status(422).json({ success: false, message: `SMTP test failed: ${error.message}` });
+    }
+};
+
+// ─── Notification Channels ───────────────────────────────────────────────────
+const CHANNEL_KEYS = [
+    'notif_email_enabled', 'notif_whatsapp_enabled', 'notif_telegram_enabled',
+    'notif_whatsapp_provider', 'notif_whatsapp_api_url', 'notif_whatsapp_token', 'notif_whatsapp_from',
+    'notif_telegram_bot_token', 'notif_telegram_chat_id',
+];
+
+exports.getNotificationChannels = async (req, res) => {
+    try {
+        const { rows } = await db.query(
+            `SELECT setting_key, setting_value FROM hospital_settings WHERE setting_key = ANY($1)`,
+            [CHANNEL_KEYS]
+        );
+        const config = {};
+        rows.forEach(r => { config[r.setting_key] = r.setting_value; });
+        CHANNEL_KEYS.forEach(k => { if (!(k in config)) config[k] = ''; });
+        // Cast booleans
+        ['notif_email_enabled', 'notif_whatsapp_enabled', 'notif_telegram_enabled'].forEach(k => {
+            config[k] = config[k] === 'true';
+        });
+        res.json({ success: true, data: config });
+    } catch (error) {
+        console.error('Error fetching notification channels:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.updateNotificationChannels = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const updates = req.body;
+        for (const key of CHANNEL_KEYS) {
+            if (key in updates) {
+                await db.query(
+                    `INSERT INTO hospital_settings (setting_key, setting_value, updated_by, updated_at)
+                     VALUES ($1, $2, $3, NOW())
+                     ON CONFLICT (setting_key) DO UPDATE SET setting_value = $2, updated_by = $3, updated_at = NOW()`,
+                    [key, String(updates[key]), userId]
+                );
+            }
+        }
+        res.json({ success: true, message: 'Notification channels saved' });
+    } catch (error) {
+        console.error('Error updating notification channels:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
