@@ -19,6 +19,12 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${APP_DIR}"
 
 # =========================
+# Pull Latest Code
+# =========================
+echo -e "\033[0;34m[INFO] Pulling from main branch before build...\033[0m"
+git pull origin main
+
+# =========================
 # Configuration
 # =========================
 DOCKER_REPO="aryaramandhanu/simrs-simtech"
