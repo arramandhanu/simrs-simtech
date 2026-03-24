@@ -39,8 +39,8 @@ const SidebarItem = ({
     to={to}
     className={({ isActive }) =>
       `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive
-        ? "bg-medical-50 text-medical-600 font-medium"
-        : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+        ? "bg-medical-50 dark:bg-medical-900/30 text-medical-600 dark:text-medical-400 font-medium"
+        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-slate-700 dark:hover:text-slate-200"
       }`
     }
   >
@@ -80,7 +80,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { to: "/antrian", icon: ListOrdered, label: "Antrian" },
     { to: "/farmasi", icon: Pill, label: "Farmasi" },
     { to: "/settings", icon: Settings, label: "Settings" },
-    // Admin only
     ...(isAdmin ? [{ to: "/users", icon: UsersRound, label: "Users" }] : []),
   ];
 
@@ -88,20 +87,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 transition-all duration-300 z-20 ${sidebarOpen ? "w-64" : "w-20"
+        className={`hidden md:flex flex-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 h-screen sticky top-0 transition-all duration-300 z-20 ${sidebarOpen ? "w-64" : "w-20"
           }`}
       >
-        <div className="h-20 flex items-center px-4 border-b border-slate-100">
+        <div className="h-20 flex items-center px-4 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-3 text-medical-600 overflow-hidden">
             <div className="w-9 h-9">
-              <img
-                src={logo}
-                alt="Logo"
-                className="w-full h-full object-contain"
-              />
+              <img src={logo} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <span
-              className={`font-bold text-xl tracking-tight text-slate-800 transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0"
+              className={`font-bold text-xl tracking-tight text-slate-800 dark:text-slate-100 transition-opacity duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0"
                 }`}
             >
               SIMRS
@@ -115,10 +110,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </div>
 
-        <div className="p-3 border-t border-slate-100">
+        <div className="p-3 border-t border-slate-100 dark:border-slate-700">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors ${!sidebarOpen && "justify-center"
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition-colors ${!sidebarOpen && "justify-center"
               }`}
           >
             <LogOut size={22} />
@@ -132,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </aside>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 bg-slate-900/50 z-40 md:hidden"
@@ -140,17 +135,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ></div>
       )}
 
+      {/* Mobile Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 bg-white w-64 z-50 transform transition-transform duration-300 md:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 bg-white dark:bg-slate-800 w-64 z-50 transform transition-transform duration-300 md:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
-        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100">
-          <span className="font-bold text-xl text-slate-800 flex items-center gap-2">
+        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-700">
+          <span className="font-bold text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <Activity className="text-medical-600" /> SIMRS
           </span>
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="text-slate-400"
+            className="text-slate-400 dark:text-slate-500"
           >
             <X size={24} />
           </button>

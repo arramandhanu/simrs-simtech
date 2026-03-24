@@ -106,7 +106,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+    <header className="h-20 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
@@ -122,12 +122,12 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
 
         {/* Search — TODO: wire to global search context */}
-        <div className="hidden md:flex items-center bg-slate-100 rounded-xl px-4 py-2.5 w-64 focus-within:w-80 focus-within:bg-white focus-within:ring-2 focus-within:ring-medical-100 transition-all duration-300">
+        <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-700 rounded-xl px-4 py-2.5 w-64 focus-within:w-80 focus-within:bg-white dark:focus-within:bg-slate-600 focus-within:ring-2 focus-within:ring-medical-100 transition-all duration-300">
           <Search size={20} className="text-slate-400 mr-3" />
           <input
             type="text"
             placeholder="Search patients, doctors..."
-            className="bg-transparent border-none outline-none text-sm w-full text-slate-600 placeholder-slate-400"
+            className="bg-transparent border-none outline-none text-sm w-full text-slate-600 dark:text-slate-200 placeholder-slate-400"
             readOnly
             title="Global search — coming soon"
           />
@@ -154,9 +154,9 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           {/* Dropdown Menu */}
           {showDropdown && isAdmin && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
-              <div className="p-3 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-700">Pending Approvals</h3>
+            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+              <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h3 className="font-semibold text-slate-700 dark:text-slate-200">Pending Approvals</h3>
                 <button onClick={() => setShowDropdown(false)} className="text-slate-400 hover:text-slate-600">
                   <X size={18} />
                 </button>
@@ -169,9 +169,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               ) : (
                 <div className="max-h-64 overflow-y-auto">
                   {pendingUsers.map((u) => (
-                    <div key={u.id} className="p-3 border-b border-slate-50 hover:bg-slate-50 flex items-center justify-between">
+                    <div key={u.id} className="p-3 border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-700 truncate">{u.name || u.email}</p>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{u.name || u.email}</p>
                         <p className="text-xs text-slate-400 truncate">{u.email}</p>
                       </div>
                       <button
@@ -202,12 +202,12 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-3 pl-6 border-l border-slate-200">
+        <div className="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-slate-700">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {user?.name || "Guest User"}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {formatRole(user?.role)}
             </p>
           </div>

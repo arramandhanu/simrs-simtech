@@ -16,11 +16,10 @@
   --color-medical-900: #0c4a6e;
   --color-medical-950: #082f49;
 
-  --color-primary: #0ea5e9; /* Sky 500 */
-  --color-primary-hover: #0284c7; /* Sky 600 */
-  
-  --color-secondary: #64748b; /* Slate 500 */
-  --color-secondary-hover: #475569; /* Slate 600 */
+  --color-primary: #0ea5e9;
+  --color-primary-hover: #0284c7;
+  --color-secondary: #64748b;
+  --color-secondary-hover: #475569;
 }
 
 /* Custom Utilities */
@@ -36,33 +35,6 @@
   }
 }
 
-/* ── Dark Mode ────────────────────────────────────────────────────────────── */
-.dark body {
-  @apply bg-slate-900 text-slate-100;
-}
-.dark .bg-white {
-  @apply bg-slate-800;
-}
-.dark .bg-slate-50 {
-  @apply bg-slate-900;
-}
-.dark .bg-slate-100 {
-  @apply bg-slate-800;
-}
-.dark .border-slate-200,
-.dark .border-slate-100 {
-  @apply border-slate-700;
-}
-.dark .text-slate-900,
-.dark .text-slate-800 {
-  @apply text-slate-100;
-}
-.dark .text-slate-600,
-.dark .text-slate-500,
-.dark .text-slate-400 {
-  @apply text-slate-400;
-}
-
 /* ── Compact Mode ─────────────────────────────────────────────────────────── */
 body.compact {
   font-size: 0.875rem;
@@ -74,5 +46,3 @@ body.compact .px-5 { padding-left: 0.75rem; padding-right: 0.75rem; }
 body.compact .gap-4 { gap: 0.5rem; }
 body.compact .mb-6 { margin-bottom: 0.75rem; }
 body.compact .mb-8 { margin-bottom: 1rem; }
-
-
