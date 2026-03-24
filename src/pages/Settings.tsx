@@ -270,7 +270,7 @@ export const SettingsPage = () => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="p-4 md:p-6 max-w-4xl mx-auto">
+        <div className="p-4 md:p-6 max-w-6xl">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-200">
