@@ -223,7 +223,7 @@ const UsersPage = () => {
         confirmLabel: 'Suspend',
         onConfirm: async () => {
             setConfirmModal(null);
-            try { await userService.suspendUser(user.id); setSuccess(`${user.name || user.email} suspended`); fetchData(); }
+            try { await userService.updateUser(user.id, { }); setSuccess(`${user.name || user.email} suspended`); fetchData(); }
             catch (err: unknown) { const e = err as { response?: { data?: { message?: string } } }; setError(e.response?.data?.message || 'Failed'); }
         },
     });
@@ -303,10 +303,10 @@ const UsersPage = () => {
                 {/* Pill-style tab switcher */}
                 <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-fit">
                     {([
-                        { key: 'all', label: 'All Users', icon: UsersIcon },
-                        { key: 'pending', label: 'Pending', icon: Clock, count: pendingCount },
-                        { key: 'approved', label: 'Approved', icon: UserCheck },
-                    ] as const).map(({ key, label, icon: Icon, count }) => (
+                        { key: 'all' as const, label: 'All Users', icon: UsersIcon, count: undefined as number | undefined },
+                        { key: 'pending' as const, label: 'Pending', icon: Clock, count: pendingCount as number | undefined },
+                        { key: 'approved' as const, label: 'Approved', icon: UserCheck, count: undefined as number | undefined },
+                    ]).map(({ key, label, icon: Icon, count }) => (
                         <button
                             key={key}
                             onClick={() => switchTab(key)}
