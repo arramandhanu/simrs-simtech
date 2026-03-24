@@ -18,15 +18,23 @@ interface AppearanceContextType {
 const AppearanceContext = createContext<AppearanceContextType | undefined>(undefined);
 
 export const AppearanceProvider = ({ children }: { children: ReactNode }) => {
-    const [isDark, setIsDark] = useState(() => localStorage.getItem(STORAGE_KEYS.theme) === 'dark');
+    // Default is ALWAYS light — only dark if user explicitly saved 'dark'
+    const [isDark, setIsDark] = useState(() => {
+        const stored = localStorage.getItem(STORAGE_KEYS.theme);
+        return stored === 'dark'; // only true if explicitly 'dark', not on first load (null)
+    });
     const [isCompact, setIsCompact] = useState(() => localStorage.getItem(STORAGE_KEYS.compact) === 'true');
     const [sidebarCollapsed, setSidebarCollapsedState] = useState(
         () => localStorage.getItem(STORAGE_KEYS.sidebar) === 'true'
     );
 
-    // Apply dark mode class to <html>
+    // Apply dark mode class to <html> whenever isDark changes
     useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDark);
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
         localStorage.setItem(STORAGE_KEYS.theme, isDark ? 'dark' : 'light');
     }, [isDark]);
 
