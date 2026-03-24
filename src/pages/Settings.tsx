@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-    Settings, User, Bell, Palette, Building2, Moon, Sun, Save, Loader2,
+    Settings, User, Bell, Palette, Building2, Save, Loader2,
     Plus, Trash2, ListOrdered, Volume2, Clock, Mail, MessageSquare,
     Send, ChevronRight, ChevronLeft, Wifi, WifiOff, TestTube2
 } from 'lucide-react';
@@ -64,7 +64,7 @@ const SettingRow = ({ icon: Icon, title, desc, checked, onChange }: {
 export const SettingsPage = () => {
     const { user } = useAuth();
     const { isAdmin } = useRole();
-    const { isDark, setTheme, setCompact, setSidebarCollapsed } = useAppearance();
+    const { setCompact, setSidebarCollapsed } = useAppearance();
     const [activeTab, setActiveTab] = useState<TabType>('profile');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -154,7 +154,7 @@ export const SettingsPage = () => {
             if (settingsRes.success) {
                 setUserSettings(settingsRes.data);
                 // Sync context with saved setting (instead of touching classList directly)
-                setTheme(settingsRes.data.theme === 'dark');
+
             }
             if (isAdmin) {
                 try {
@@ -208,7 +208,7 @@ export const SettingsPage = () => {
     const handleSaveUserSettings = async (newSettings: Partial<UserSettings>) => {
         const updated = { ...userSettings, ...newSettings };
         setUserSettings(updated);
-        if (newSettings.theme !== undefined) setTheme(newSettings.theme === 'dark');
+
         if (newSettings.compactMode !== undefined) setCompact(newSettings.compactMode);
         if (newSettings.sidebarCollapsed !== undefined) setSidebarCollapsed(newSettings.sidebarCollapsed);
         try { await settingsService.updateUserSettings(updated); showMessage('success', 'Pengaturan disimpan'); }
@@ -357,10 +357,6 @@ export const SettingsPage = () => {
                 {/* Appearance */}
                 {activeTab === 'appearance' && (
                     <SectionCard title="Tampilan" desc="Sesuaikan tema dan layout aplikasi">
-                        <SettingRow icon={isDark ? Moon : Sun}
-                            title="Mode Gelap" desc="Aktifkan tampilan dark mode"
-                            checked={isDark}
-                            onChange={v => handleSaveUserSettings({ theme: v ? 'dark' : 'light' })} />
                         <SettingRow title="Compact Mode" desc="Kurangi padding dan jarak antar elemen"
                             checked={userSettings.compactMode}
                             onChange={v => handleSaveUserSettings({ compactMode: v })} />
