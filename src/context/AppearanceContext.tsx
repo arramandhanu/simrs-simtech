@@ -1,16 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 const STORAGE_KEYS = {
-    theme: 'simrs_theme',
     compact: 'simrs_compact',
     sidebar: 'simrs_sidebar_collapsed',
 };
 
 interface AppearanceContextType {
-    isDark: boolean;
     isCompact: boolean;
     sidebarCollapsed: boolean;
-    setTheme: (dark: boolean) => void;
     setCompact: (on: boolean) => void;
     setSidebarCollapsed: (on: boolean) => void;
 }
@@ -18,25 +15,16 @@ interface AppearanceContextType {
 const AppearanceContext = createContext<AppearanceContextType | undefined>(undefined);
 
 export const AppearanceProvider = ({ children }: { children: ReactNode }) => {
-    // Default is ALWAYS light — only dark if user explicitly saved 'dark'
-    const [isDark, setIsDark] = useState(() => {
-        const stored = localStorage.getItem(STORAGE_KEYS.theme);
-        return stored === 'dark'; // only true if explicitly 'dark', not on first load (null)
-    });
     const [isCompact, setIsCompact] = useState(() => localStorage.getItem(STORAGE_KEYS.compact) === 'true');
     const [sidebarCollapsed, setSidebarCollapsedState] = useState(
         () => localStorage.getItem(STORAGE_KEYS.sidebar) === 'true'
     );
 
-    // Apply dark mode class to <html> whenever isDark changes
+    // Always ensure light mode — remove dark class if it exists
     useEffect(() => {
-        if (isDark) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem(STORAGE_KEYS.theme, isDark ? 'dark' : 'light');
-    }, [isDark]);
+        document.documentElement.classList.remove('dark');
+        localStorage.removeItem('simrs_theme');
+    }, []);
 
     // Apply compact mode class to <body>
     useEffect(() => {
@@ -44,7 +32,6 @@ export const AppearanceProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(STORAGE_KEYS.compact, String(isCompact));
     }, [isCompact]);
 
-    const setTheme = (dark: boolean) => setIsDark(dark);
     const setCompact = (on: boolean) => setIsCompact(on);
     const setSidebarCollapsed = (on: boolean) => {
         setSidebarCollapsedState(on);
@@ -52,7 +39,7 @@ export const AppearanceProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AppearanceContext.Provider value={{ isDark, isCompact, sidebarCollapsed, setTheme, setCompact, setSidebarCollapsed }}>
+        <AppearanceContext.Provider value={{ isCompact, sidebarCollapsed, setCompact, setSidebarCollapsed }}>
             {children}
         </AppearanceContext.Provider>
     );
