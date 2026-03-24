@@ -64,7 +64,7 @@ const SettingRow = ({ icon: Icon, title, desc, checked, onChange }: {
 export const SettingsPage = () => {
     const { user } = useAuth();
     const { isAdmin } = useRole();
-    const { setTheme, setCompact, setSidebarCollapsed } = useAppearance();
+    const { isDark, setTheme, setCompact, setSidebarCollapsed } = useAppearance();
     const [activeTab, setActiveTab] = useState<TabType>('profile');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -153,7 +153,8 @@ export const SettingsPage = () => {
             }
             if (settingsRes.success) {
                 setUserSettings(settingsRes.data);
-                document.documentElement.classList.toggle('dark', settingsRes.data.theme === 'dark');
+                // Sync context with saved setting (instead of touching classList directly)
+                setTheme(settingsRes.data.theme === 'dark');
             }
             if (isAdmin) {
                 try {
@@ -356,9 +357,9 @@ export const SettingsPage = () => {
                 {/* Appearance */}
                 {activeTab === 'appearance' && (
                     <SectionCard title="Tampilan" desc="Sesuaikan tema dan layout aplikasi">
-                        <SettingRow icon={userSettings.theme === 'dark' ? Moon : Sun}
+                        <SettingRow icon={isDark ? Moon : Sun}
                             title="Mode Gelap" desc="Aktifkan tampilan dark mode"
-                            checked={userSettings.theme === 'dark'}
+                            checked={isDark}
                             onChange={v => handleSaveUserSettings({ theme: v ? 'dark' : 'light' })} />
                         <SettingRow title="Compact Mode" desc="Kurangi padding dan jarak antar elemen"
                             checked={userSettings.compactMode}
