@@ -65,6 +65,12 @@ app.use('/api/users', authMiddleware, require('./routes/userRoutes'));
 // Settings: All authenticated users (role check inside for hospital settings)
 app.use('/api/settings', require('./routes/settingsRoutes'));
 
+// Queue management routes
+app.use('/api/departments', authMiddleware, require('./routes/departmentRoutes'));
+app.use('/api/counters', authMiddleware, require('./routes/counterRoutes'));
+app.use('/api/queue', authMiddleware, require('./routes/queueRoutes'));
+app.use('/api/tts', authMiddleware, require('./routes/ttsRoutes'));
+
 // Static file serving for uploads
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
