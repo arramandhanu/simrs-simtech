@@ -19,4 +19,13 @@ router.put('/profile', settingsController.updateProfile);
 router.get('/hospital', requireRole([ROLES.ADMIN]), settingsController.getHospitalSettings);
 router.put('/hospital', requireRole([ROLES.ADMIN]), settingsController.updateHospitalSettings);
 
+// SMTP / Email config (admin only)
+router.get('/smtp', requireRole([ROLES.ADMIN]), settingsController.getSmtpConfig);
+router.put('/smtp', requireRole([ROLES.ADMIN]), settingsController.updateSmtpConfig);
+router.post('/smtp/test', requireRole([ROLES.ADMIN]), settingsController.testSmtpConfig);
+
+// Notification channels config (admin only)
+router.get('/notification-channels', requireRole([ROLES.ADMIN]), settingsController.getNotificationChannels);
+router.put('/notification-channels', requireRole([ROLES.ADMIN]), settingsController.updateNotificationChannels);
+
 module.exports = router;
